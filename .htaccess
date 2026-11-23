@@ -1,0 +1,41 @@
+#
+# Portafolio fotográfico — configuración Apache
+# Todo el proyecto vive dentro de esta carpeta y funciona con rutas relativas.
+#
+
+# Página de inicio del portafolio y del panel
+# (index.html para el sitio; index.php para /admin/)
+DirectoryIndex index.html index.php
+
+# Evita el listado de directorios
+Options -Indexes
+
+# Bloquea el acceso web directo a archivos de datos sensibles
+<FilesMatch "\.(json|log|md|txt|tmp|ini|bak)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Aislamiento del sitio principal: las cabeceras del .htaccess raiz se heredan
+# por directorio. Su CSP (script-src/img-src 'self') bloquearia los scripts
+# inline, el handler onerror y las imagenes externas (Unsplash/placehold.co)
+# de este proyecto. Al redefinir la cabecera aqui, el portafolio queda
+# gobernado unicamente por sus propias reglas.
+<IfModule mod_headers.c>
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://placehold.co; connect-src 'self'; font-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+</IfModule>
+
+# Cache de medios estáticos (imágenes optimizadas)
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/webp "access plus 30 days"
+    ExpiresByType image/jpeg "access plus 30 days"
+    ExpiresByType image/png  "access plus 30 days"
+    ExpiresByType text/css   "access plus 7 days"
+    ExpiresByType application/javascript "access plus 7 days"
+</IfModule>

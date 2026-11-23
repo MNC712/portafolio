@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portafolio | Estudio Visual</title>
+    <!-- Tema (día / noche): aplica la preferencia guardada antes del primer pintado -->
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('f18-theme') === 'light') {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <!-- Tailwind CSS (local) -->
+    <script src="assets/vendor/tailwind.js?v=6"></script>
+    <!-- Tipografías locales: Inter, Cormorant Garamond y JetBrains Mono -->
+    <link rel="stylesheet" href="assets/vendor/fonts.css?v=6">
+    <!-- Lucide Icons (local) -->
+    <script src="assets/vendor/lucide.js?v=6"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Cormorant Garamond', 'serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        studio: {
+                            950: '#09090b',
+                            900: '#121215',
+                            800: '#1c1c21',
+                            700: '#27272f',
+                            200: '#e4e4e7',
+                            100: '#f4f4f5',
+                            accent: '#d4af37',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilos base y suavizado tipográfico */
+        body {
+            background-color: #09090b;
+            color: #f4f4f5;
+            /* clip (y no hidden) recorta el desborde horizontal SIN crear un
+               contenedor de scroll: así el header sticky sigue funcionando
+               en iOS/WebKit. hidden queda como fallback para navegadores viejos. */
+            overflow-x: hidden;
+            overflow-x: clip;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Transiciones suaves para cambio de vistas SPA */
+        .spa-view {
+            display: none;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .spa-view.active-view {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Contenedor de la galería con transición suave al filtrar */
+        #gallery-grid {
+            transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #gallery-grid.grid-switching {
+            opacity: 0;
+            transform: translateY(10px) scale(0.99);
+            pointer-events: none;
+        }
+
+        /* Revelado progresivo: cada tarjeta entra cuando se aproxima al
+           viewport (IntersectionObserver en portfolio.js), en vez de
+           aparecer todas al mismo tiempo. */
+        .gallery-card {
+            opacity: 0;
+            transform: translateY(24px) scale(0.98);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.35s ease,
+                        box-shadow 0.4s ease;
+            /* Masonry: la tarjeta no se fragmenta entre columnas */
+            break-inside: avoid;
+            margin-bottom: 1rem;
+            will-change: opacity, transform;
+        }
+
+        .gallery-card.card-in {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        @media (min-width: 640px) {
+            .gallery-card { margin-bottom: 1.25rem; }
+        }
+
+        .gallery-card.card-in:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.85);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .gallery-card { transition: opacity 0.2s ease; transform: none; }
+        }
+
+        /* Detalles del pie: ocultos por defecto (también en móvil).
+           Solo se revelan al pasar el puntero en equipos de escritorio. */
+        .gallery-info {
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .gallery-card:hover .gallery-info,
+            .gallery-card:focus-within .gallery-info {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Efecto Shimmer / Skeleton sutil mientras cargan las imágenes */
+        @keyframes subtleShimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .img-skeleton {
+            background: linear-gradient(90deg, #101014 25%, #1c1c22 50%, #101014 75%);
+            background-size: 200% 100%;
+            animation: subtleShimmer 2s infinite linear;
+        }
+
+        /* Transición suave de carga de imagen + zoom en hover */
+        .gallery-img {
+            opacity: 0;
+            transform: scale(1.03);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .gallery-img.is-loaded {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .group:hover .gallery-img.is-loaded {
+            transform: scale(1.045);
+        }
+
+        /* Carga progresiva: la imagen aparece desenfocada y luego enfoca. */
+        .gallery-img.blur-up {
+            opacity: 0;
+            filter: blur(24px);
+            transform: scale(1.05);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                        filter 1s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .gallery-img.blur-up.is-loaded {
+            opacity: 1;
+            filter: blur(0);
+            transform: scale(1);
+        }
+
+        /* Transición fluida para la imagen y metadatos del Lightbox */
+        .lb-smooth-target {
+            transition: opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1), filter 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .lb-switching {
+            opacity: 0 !important;
+            transform: scale(0.975) translateY(4px) !important;
+        }
+
+        /* La imagen del lightbox entra desenfocada y enfoca al cargar. */
+        #lb-image.lb-switching {
+            filter: blur(16px) !important;
+        }
+
+        /* Scrollbar minimalista */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272f;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+
+        /* Indicador de navegación activo */
+        .nav-btn {
+            position: relative;
+        }
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            width: 0;
+            height: 1.5px;
+            background-color: #f4f4f5;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateX(-50%);
+        }
+        .nav-btn.active::after {
+            width: 100%;
+        }
+
+        /* =========================================================
+           Selector de tema (día / noche)
+           ========================================================= */
+        .theme-toggle {
+            width: 36px; height: 36px;
+            border-radius: 9999px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #e4e4e7; background: transparent;
+            cursor: pointer;
+            transition: border-color .2s ease, color .2s ease, background .2s ease;
+        }
+        .theme-toggle:hover { border-color: rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.05); }
+        .theme-icon-moon { display: none; }
+        html:not(.dark) .theme-toggle { border-color: rgba(0, 0, 0, 0.15); color: #3f3f46; }
+        html:not(.dark) .theme-toggle:hover { border-color: rgba(0, 0, 0, 0.35); background: rgba(0, 0, 0, 0.035); }
+        html:not(.dark) .theme-icon-sun { display: none; }
+        html:not(.dark) .theme-icon-moon { display: inline-block; }
+
+        /* =========================================================
+           Menú móvil desplegable (hamburguesa)
+           ========================================================= */
+        #mobile-menu {
+            display: none;
+            background-color: rgba(9, 9, 11, 0.96);
+            border-color: rgba(255, 255, 255, 0.07);
+        }
+        #mobile-menu.open { display: block; }
+
+        /* Íconos del botón hamburguesa: se alternan por CSS según el estado
+           (sin reemplazar el SVG en el DOM, para no romper el clic en curso) */
+        #menu-toggle .menu-icon-close { display: none; }
+        #menu-toggle[aria-expanded="true"] .menu-icon-open { display: none; }
+        #menu-toggle[aria-expanded="true"] .menu-icon-close { display: block; }
+        .mob-nav-btn {
+            display: block; width: 100%; text-align: left;
+            padding: 0.85rem 0.9rem; border-radius: 0.6rem;
+            font: inherit; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
+            color: #a1a1aa; background: transparent; cursor: pointer;
+            transition: color .2s ease, background .2s ease;
+        }
+        .mob-nav-btn:hover { color: #ffffff; }
+        .mob-nav-btn.active { color: #ffffff; background: rgba(255, 255, 255, 0.06); }
+        html:not(.dark) #mobile-menu { background-color: rgba(255, 255, 255, 0.97); border-color: rgba(0, 0, 0, 0.08); }
+        html:not(.dark) .mob-nav-btn { color: #52525b; }
+        html:not(.dark) .mob-nav-btn:hover { color: #121215; }
+        html:not(.dark) .mob-nav-btn.active { color: #121215; background: rgba(0, 0, 0, 0.05); }
+        @media (min-width: 768px) { #mobile-menu { display: none !important; } }
+
+        /* =========================================================
+           MODO DÍA — capa de sobrescritura del tema claro.
+           Se activa cuando <html> pierde la clase .dark. Las zonas
+           marcadas con .on-dark (fichas sobre imágenes y el visor a
+           pantalla completa) conservan su paleta oscura.
+           ========================================================= */
+        html:not(.dark) body { background-color: #f7f7f8 !important; color: #18181b !important; }
+        html:not(.dark) ::-webkit-scrollbar-track { background: #ececef !important; }
+        html:not(.dark) ::-webkit-scrollbar-thumb { background: #c9c9cf !important; }
+        html:not(.dark) ::-webkit-scrollbar-thumb:hover { background: #b0b0b8 !important; }
+        html:not(.dark) .nav-btn::after { background-color: #18181b !important; }
+
+        /* Superficies */
+        html:not(.dark) header.sticky {
+            background-color: rgba(255, 255, 255, 0.85) !important;
+            border-color: rgba(0, 0, 0, 0.08) !important;
+        }
+        html:not(.dark) .bg-studio-900:not(.on-dark *) { background-color: #ffffff !important; }
+        html:not(.dark) .bg-studio-900\/70:not(.on-dark *) { background-color: #fafafa !important; }
+        html:not(.dark) .bg-studio-800:not(.on-dark *) { background-color: #f1f1f3 !important; }
+        html:not(.dark) .bg-studio-950:not(.on-dark *) { background-color: #f4f4f6 !important; }
+        html:not(.dark) .hover\:bg-studio-700:hover:not(.on-dark *) { background-color: #e6e6e9 !important; }
+        html:not(.dark) #about-cta-card {
+            background-image: linear-gradient(90deg, #ffffff, #f1f1f3) !important;
+            border-color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Textos */
+        html:not(.dark) .text-white:not(.on-dark *) { color: #121215 !important; }
+        html:not(.dark) .text-zinc-100:not(.on-dark *) { color: #27272a !important; }
+        html:not(.dark) .text-zinc-200:not(.on-dark *) { color: #3f3f46 !important; }
+        html:not(.dark) .text-zinc-300:not(.on-dark *) { color: #3f3f46 !important; }
+        html:not(.dark) .text-zinc-400:not(.on-dark *) { color: #52525b !important; }
+        html:not(.dark) .text-zinc-500:not(.on-dark *) { color: #71717a !important; }
+        html:not(.dark) .placeholder-zinc-600:not(.on-dark *)::placeholder { color: #a1a1aa !important; }
+
+        /* Botones claros: se invierten a oscuro en modo día */
+        html:not(.dark) .bg-white:not(.on-dark *) { background-color: #18181b !important; }
+        html:not(.dark) .text-zinc-950:not(.on-dark *) { color: #fafafa !important; }
+        html:not(.dark) .hover\:bg-zinc-200:hover:not(.on-dark *) { background-color: #303036 !important; }
+
+        /* Bordes y separadores */
+        html:not(.dark) .border-white\/\[0\.07\]:not(.on-dark *) { border-color: rgba(0, 0, 0, 0.08) !important; }
+        html:not(.dark) .border-white\/\[0\.06\]:not(.on-dark *) { border-color: rgba(0, 0, 0, 0.07) !important; }
+        html:not(.dark) .border-white\/\[0\.05\]:not(.on-dark *) { border-color: rgba(0, 0, 0, 0.06) !important; }
+        html:not(.dark) .border-white\/10:not(.on-dark *) { border-color: rgba(0, 0, 0, 0.12) !important; }
+        html:not(.dark) .border-white\/5:not(.on-dark *) { border-color: rgba(0, 0, 0, 0.05) !important; }
+        html:not(.dark) .border-white\/20:not(.on-dark *) { border-color: rgba(0, 0, 0, 0.15) !important; }
+        html:not(.dark) .divide-white\/\[0\.06\] > :not([hidden]) ~ :not([hidden]) { border-color: rgba(0, 0, 0, 0.07) !important; }
+
+        /* Estados interactivos (al final para ganar por orden de aparición) */
+        html:not(.dark) .hover\:text-white:hover:not(.on-dark *),
+        html:not(.dark) .hover\:text-zinc-200:hover:not(.on-dark *),
+        html:not(.dark) .hover\:text-zinc-300:hover:not(.on-dark *) { color: #121215 !important; }
+        html:not(.dark) .hover\:border-white\/20:hover:not(.on-dark *) { border-color: rgba(0, 0, 0, 0.22) !important; }
+        html:not(.dark) .group:hover .group-hover\:border-white\/50 { border-color: rgba(0, 0, 0, 0.35) !important; }
+        html:not(.dark) .focus\:border-white\/40:focus:not(.on-dark *) { border-color: rgba(0, 0, 0, 0.38) !important; }
+        html:not(.dark) input[type="date"] { color-scheme: light !important; }
+
+        /* Aviso de éxito del formulario */
+        html:not(.dark) #form-success { background-color: #ecfdf5 !important; border-color: rgba(16, 185, 129, 0.3) !important; }
+        html:not(.dark) #form-success h4 { color: #065f46 !important; }
+        html:not(.dark) #form-success p { color: #047857 !important; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-zinc-200 selection:text-zinc-950">
+
+    <!-- ==========================================
+         BARRA DE NAVEGACIÓN SUPERIOR FIJA (STICKY)
+    =========================================== -->
+    <header class="sticky top-0 z-40 w-full backdrop-blur-md bg-studio-950/85 border-b border-white/[0.07] transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
+            
+            <!-- Marca tipográfica (administrable desde el panel) -->
+            <button onclick="switchTab('galeria')" class="text-left group focus:outline-none">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center bg-studio-900 group-hover:border-white/50 transition-colors overflow-hidden shrink-0">
+                        <img id="brand-logo" src="" alt="" class="hidden w-full h-full object-cover">
+                        <i id="brand-icon" data-lucide="aperture" class="w-4 h-4 text-zinc-200"></i>
+                    </div>
+                    <div>
+                        <span id="brand-title" class="block text-base sm:text-lg font-medium tracking-[0.15em] sm:tracking-[0.2em] text-white uppercase">Portafolio</span>
+                        <span id="brand-subtitle" class="block text-[10px] font-mono tracking-[0.25em] text-zinc-400 uppercase">Estudio Visual</span>
+                    </div>
+                </div>
+            </button>
+
+            <!-- Navegación por Pestañas (SPA) — escritorio -->
+            <nav class="hidden md:flex items-center gap-2 sm:gap-8" aria-label="Navegación Principal">
+                <button onclick="switchTab('galeria')" id="tab-btn-galeria" class="nav-btn active px-3 py-2 text-xs sm:text-sm font-medium tracking-widest uppercase text-white transition-colors">
+                    Galería
+                </button>
+                <button onclick="switchTab('sobremi')" id="tab-btn-sobremi" class="nav-btn px-3 py-2 text-xs sm:text-sm font-medium tracking-widest uppercase text-zinc-400 hover:text-zinc-200 transition-colors">
+                    Sobre Mí
+                </button>
+                <button onclick="switchTab('contacto')" id="tab-btn-contacto" class="nav-btn px-3 py-2 text-xs sm:text-sm font-medium tracking-widest uppercase text-zinc-400 hover:text-zinc-200 transition-colors">
+                    Contacto
+                </button>
+            </nav>
+
+            <!-- Acciones rápidas: tema (día / noche), disponibilidad y menú móvil -->
+            <div class="flex items-center gap-1 sm:gap-4">
+                <button id="theme-toggle" type="button" class="theme-toggle" aria-label="Cambiar entre modo día y noche" title="Modo día / noche">
+                    <i data-lucide="sun" class="theme-icon-sun w-4 h-4"></i>
+                    <i data-lucide="moon" class="theme-icon-moon w-4 h-4"></i>
+                </button>
+                <span class="hidden md:inline-flex items-center gap-2 text-xs font-mono text-zinc-400 bg-studio-900 px-3 py-1.5 rounded-full border border-white/5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Agenda Abierta
+                </span>
+                <button id="menu-toggle" type="button" class="md:hidden p-2 -mr-1 rounded-lg text-zinc-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="mobile-menu">
+                    <i data-lucide="menu" class="menu-icon-open w-6 h-6"></i>
+                    <i data-lucide="x" class="menu-icon-close w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Menú móvil desplegable -->
+        <nav id="mobile-menu" class="absolute top-full left-0 right-0 md:hidden border-b backdrop-blur-md px-3 pb-3 pt-1 space-y-1" aria-label="Navegación Principal (móvil)">
+            <button onclick="switchTab('galeria')" data-view="galeria" class="mob-nav-btn active">Galería</button>
+            <button onclick="switchTab('sobremi')" data-view="sobremi" class="mob-nav-btn">Sobre Mí</button>
+            <button onclick="switchTab('contacto')" data-view="contacto" class="mob-nav-btn">Contacto</button>
+        </nav>
+    </header>
+
+    <!-- ==========================================
+         CONTENEDOR PRINCIPAL DE VISTAS (SPA)
+    =========================================== -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+
+        <!-- ------------------------------------------
+             VISTA 1: GALERÍA (Por defecto)
+        ------------------------------------------- -->
+        <section id="view-galeria" class="spa-view active-view" aria-labelledby="gallery-heading">
+            
+            <!-- Encabezado de Galería y Filtros -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 pb-6 border-b border-white/[0.07] gap-6">
+                <div>
+                    <p class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Archivo Seleccionado & Fichas Técnicas</p>
+                    <h1 id="gallery-heading" class="font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight">
+                        Obras & Series Visuales
+                    </h1>
+                </div>
+
+                <!-- Botones de Filtro Ordenados -->
+                <div id="gallery-filters" class="flex flex-wrap items-center gap-1.5 bg-studio-900 p-1.5 rounded-xl border border-white/[0.06]" role="tablist" aria-label="Filtros de categoria"></div>
+            </div>
+
+            <!-- Masonry de fotografías: encastran según la proporción real de cada imagen -->
+            <div id="gallery-grid" class="columns-1 sm:columns-2 lg:columns-3 gap-3 sm:gap-4 relative">
+                <!-- Las tarjetas se inyectan dinámicamente vía JS -->
+            </div>
+
+        </section>
+
+
+        <!-- ------------------------------------------
+             VISTA 2: SOBRE MÍ (Independiente)
+        ------------------------------------------- -->
+        <section id="view-sobremi" class="spa-view" aria-labelledby="about-heading">
+            
+            <!-- Encabezado Editorial -->
+            <div class="mb-12 pb-6 border-b border-white/[0.07]">
+                <p id="about-eyebrow" class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Perfil &amp; Trayectoria</p>
+                <h2 id="about-heading" class="font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight">
+                    Detrás del Lente
+                </h2>
+            </div>
+
+            <!-- Diseño Editorial de Dos Columnas -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+                
+                <!-- Columna Izquierda: Retrato y Ficha Rápida (5 cols) -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="relative rounded-2xl overflow-hidden bg-studio-900 border border-white/10 aspect-[4/5] group img-skeleton">
+                        <img 
+                            id="about-portrait"
+                            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=85" 
+                            alt="Retrato del fotógrafo en estudio" 
+                            onload="this.classList.add('is-loaded'); this.parentElement.classList.remove('img-skeleton');"
+                            onerror="this.src='https://placehold.co/800x1000/121215/e4e4e7?text=Retrato'; this.classList.add('is-loaded');"
+                            class="gallery-img w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 transition-all duration-700"
+                        >
+                        <div class="on-dark absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6">
+                            <div>
+                                <p id="about-portrait-role" class="font-mono text-xs uppercase tracking-widest text-zinc-300">Director de Fotografía</p>
+                                <p id="about-portrait-name" class="font-serif text-2xl text-white"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Estadísticas Clave -->
+                    <div id="about-stats" class="grid grid-cols-3 gap-4 p-5 rounded-2xl bg-studio-900 border border-white/[0.07] text-center">
+                        <div>
+                            <span class="block font-serif text-3xl sm:text-4xl text-white font-semibold">10+</span>
+                            <span class="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mt-1 block">Años Exp.</span>
+                        </div>
+                        <div class="border-x border-white/[0.07]">
+                            <span class="block font-serif text-3xl sm:text-4xl text-white font-semibold">140+</span>
+                            <span class="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mt-1 block">Campañas</span>
+                        </div>
+                        <div>
+                            <span class="block font-serif text-3xl sm:text-4xl text-white font-semibold">18</span>
+                            <span class="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mt-1 block">Premios Int.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Biografía, Filosofía y Equipo (7 cols) -->
+                <div class="lg:col-span-7 space-y-10">
+                    
+                    <!-- Biografía Profesional -->
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 flex items-center gap-2">
+                            <i data-lucide="user" class="w-4 h-4 text-white"></i> <span id="about-bio-heading">Biografía Profesional</span>
+                        </h3>
+                        <p id="about-bio-quote" class="font-serif text-2xl sm:text-3xl text-zinc-100 leading-snug font-normal">
+                            “Busco la quietud dentro del movimiento y la geometría oculta en la luz natural.”
+                        </p>
+                        <div id="about-bio-paragraphs" class="space-y-4 text-zinc-300 text-sm sm:text-base leading-relaxed font-light">
+                            <p>
+                                Soy fotógrafo documental, deportivo y editorial con base en Buenos Aires y Madrid. Durante la última década me he especializado en capturar la tensión atlética de alto rendimiento, retratos de carácter íntimo y la sobriedad de la arquitectura contemporánea.
+                            </p>
+                            <p>
+                                Mi trabajo se caracteriza por un enfoque minimalista y ordenado: elimino las distracciones visuales para que la composición, la textura y el gesto humano cuenten toda la historia sin artificios innecesarios.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Especialidades / Servicios -->
+                    <div class="space-y-4 pt-6 border-t border-white/[0.07]">
+                        <h3 class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 flex items-center gap-2">
+                            <i data-lucide="layers" class="w-4 h-4 text-white"></i> <span id="about-specialties-heading">Áreas de Especialización</span>
+                        </h3>
+                        <div id="about-specialties" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="p-4 rounded-xl bg-studio-900/70 border border-white/[0.05]">
+                                <h4 class="text-white font-medium text-sm mb-1">Cobertura Deportiva & Acción</h4>
+                                <p class="text-xs text-zinc-400 leading-relaxed">Congelación de alta velocidad, seguimiento en pista y narrativa visual para atletas y marcas técnicas.</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-studio-900/70 border border-white/[0.05]">
+                                <h4 class="text-white font-medium text-sm mb-1">Retrato Editorial & Estudio</h4>
+                                <p class="text-xs text-zinc-400 leading-relaxed">Iluminación controlada en clave baja, dirección de pose orgánica para perfiles corporativos y artistas.</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-studio-900/70 border border-white/[0.05]">
+                                <h4 class="text-white font-medium text-sm mb-1">Arquitectura & Interiorismo</h4>
+                                <p class="text-xs text-zinc-400 leading-relaxed">Corrección de perspectiva rigurosa y estudio de la luz solar a lo largo del día para estudios de diseño.</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-studio-900/70 border border-white/[0.05]">
+                                <h4 class="text-white font-medium text-sm mb-1">Expediciones & Naturaleza</h4>
+                                <p class="text-xs text-zinc-400 leading-relaxed">Documentación de paisajes remotos en condiciones climáticas extremas para publicaciones impresas.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Equipo Fotográfico (Gear List) -->
+                    <div class="space-y-4 pt-6 border-t border-white/[0.07]">
+                        <h3 class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 flex items-center gap-2">
+                            <i data-lucide="camera" class="w-4 h-4 text-white"></i> <span id="about-gear-heading">Equipo Técnico en Estudio y Campo</span>
+                        </h3>
+                        <div id="about-gear" class="bg-studio-900 rounded-2xl border border-white/[0.07] divide-y divide-white/[0.06] text-sm">
+                            <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span class="text-zinc-400 font-mono text-xs uppercase">Cuerpos Principales</span>
+                                <span class="text-zinc-100 font-medium">Sony Alpha 1 (50MP) &middot; Leica Q3 (Reportaje)</span>
+                            </div>
+                            <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span class="text-zinc-400 font-mono text-xs uppercase">Ópticas Fijas (Primes)</span>
+                                <span class="text-zinc-100 font-medium">35mm f/1.4 GM &middot; 50mm f/1.2 GM &middot; 85mm f/1.4 GM</span>
+                            </div>
+                            <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span class="text-zinc-400 font-mono text-xs uppercase">Teleobjetivos & Acción</span>
+                                <span class="text-zinc-100 font-medium">70-200mm f/2.8 GM OSS II &middot; 400mm f/2.8 GM</span>
+                            </div>
+                            <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span class="text-zinc-400 font-mono text-xs uppercase">Iluminación & Color</span>
+                                <span class="text-zinc-100 font-medium">Profoto B10X Plus Duo Kit &middot; Flujo calibrado EIZO ColorEdge</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CTA hacia Contacto -->
+                    <div id="about-cta-card" class="pt-4 flex items-center justify-between p-6 rounded-2xl bg-gradient-to-r from-studio-900 to-studio-800 border border-white/10">
+                        <div>
+                            <h4 id="about-cta-title" class="text-white font-medium text-base">¿Tienes un proyecto visual en mente?</h4>
+                            <p id="about-cta-text" class="text-zinc-400 text-xs sm:text-sm mt-0.5">Disponible para comisiones comerciales y editoriales a nivel global.</p>
+                        </div>
+                        <button id="about-cta-button" onclick="switchTab('contacto')" class="px-5 py-2.5 rounded-xl bg-white text-zinc-950 font-medium text-xs uppercase tracking-wider hover:bg-zinc-200 transition-colors shrink-0">
+                            Reservar Sesión
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ------------------------------------------
+             VISTA 3: CONTACTO (Independiente)
+        ------------------------------------------- -->
+        <section id="view-contacto" class="spa-view" aria-labelledby="contact-heading">
+            
+            <!-- Encabezado de Contacto -->
+            <div class="mb-12 pb-6 border-b border-white/[0.07]">
+                <p id="contact-eyebrow" class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Consultas &amp; Reservas</p>
+                <h2 id="contact-heading" class="font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight">
+                    Iniciar una Conversación
+                </h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+                
+                <!-- Columna Izquierda: Tarjetas Informativas Directas (5 cols) -->
+                <div class="lg:col-span-5 space-y-5">
+                    
+                    <div class="p-6 rounded-2xl bg-studio-900 border border-white/[0.07] space-y-6">
+                        <div>
+                            <span id="contact-email-label" class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block mb-1">Correo Directo de Estudio</span>
+                            <div class="flex items-center justify-between gap-2">
+                                <a id="contact-email-link" href="mailto:contacto@estudio.com" class="text-lg font-medium text-white hover:underline">contacto@estudio.com</a>
+                                <button onclick="copyEmail()" id="copy-email-btn" class="p-2 rounded-lg bg-studio-800 hover:bg-studio-700 text-zinc-300 text-xs font-mono flex items-center gap-1.5 transition-colors" title="Copiar correo">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                    <span id="copy-email-text">Copiar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="pt-5 border-t border-white/[0.06]">
+                            <span id="contact-location-label" class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block mb-1">Estudio Base &amp; Cobertura</span>
+                            <p id="contact-location-title" class="text-base text-zinc-100 font-medium">Palermo Soho, Buenos Aires / Madrid</p>
+                            <p id="contact-location-note" class="text-xs text-zinc-400 mt-1">Pasaporte al día. Disponible para asignaciones internacionales con 72h de preaviso.</p>
+                        </div>
+
+                        <div class="pt-5 border-t border-white/[0.06]">
+                            <span id="contact-delivery-label" class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block mb-2">Tiempos de Entrega Habituales</span>
+                            <ul id="contact-delivery" class="space-y-2 text-xs text-zinc-300">
+                                <li class="flex items-center gap-2">
+                                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                                    <span>Pre-selección en vivo (Tethering) durante sesión</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                                    <span>Entrega deportiva/prensa en menos de 12 horas</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                                    <span>Retoque editorial de alta gama en 5 días hábiles</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Enlaces a Redes Sociales Profesionales -->
+                    <div class="p-6 rounded-2xl bg-studio-900 border border-white/[0.07]">
+                        <span id="contact-socials-label" class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block mb-4">Canales &amp; Portafolios Externos</span>
+                        <div id="contact-socials" class="grid grid-cols-2 gap-3"></div>
+                    </div>
+
+                </div>
+
+                <!-- Columna Derecha: Formulario Estructurado (7 cols) -->
+                <div class="lg:col-span-7">
+                    <div class="p-6 sm:p-8 rounded-2xl bg-studio-900 border border-white/[0.07] relative">
+                        
+                        <h3 id="contact-form-title" class="text-lg font-medium text-white mb-1">Solicitud de Cotización o Reserva</h3>
+                        <p id="contact-form-text" class="text-xs text-zinc-400 mb-6">Completa los detalles del proyecto. Respondo personalmente en menos de 24 horas.</p>
+
+                        <!-- Mensaje de Éxito Oculto por defecto -->
+                        <div id="form-success" class="hidden mb-6 p-5 rounded-xl bg-emerald-950/50 border border-emerald-500/30 text-emerald-200">
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
+                                <div>
+                                    <h4 class="text-sm font-medium text-white">Mensaje recibido correctamente</h4>
+                                    <p id="form-success-details" class="text-xs text-emerald-200/80 mt-1 leading-relaxed"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form id="contact-form" onsubmit="handleContactSubmit(event)" class="space-y-5" novalidate>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <!-- Nombre -->
+                                <div>
+                                    <label for="name" class="block text-xs font-mono uppercase tracking-wider text-zinc-300 mb-2">Nombre Completo *</label>
+                                    <input type="text" id="name" name="name" required placeholder="Ej. Sofía Martínez"
+                                        class="w-full px-4 py-3 rounded-xl bg-studio-950 border border-white/10 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/40 transition-colors">
+                                </div>
+                                <!-- Email -->
+                                <div>
+                                    <label for="email" class="block text-xs font-mono uppercase tracking-wider text-zinc-300 mb-2">Correo Electrónico *</label>
+                                    <input type="email" id="email" name="email" required placeholder="nombre@empresa.com"
+                                        class="w-full px-4 py-3 rounded-xl bg-studio-950 border border-white/10 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/40 transition-colors">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <!-- Tipo de Proyecto -->
+                                <div>
+                                    <label for="project-type" class="block text-xs font-mono uppercase tracking-wider text-zinc-300 mb-2">Especialidad Requerida *</label>
+                                    <select id="project-type" name="projectType" required
+                                        class="w-full px-4 py-3 rounded-xl bg-studio-950 border border-white/10 text-sm text-white focus:outline-none focus:border-white/40 transition-colors">
+                                        <option value="" disabled selected>Seleccionar categoría...</option>
+                                        <option value="Cobertura Deportiva / Marca">Cobertura Deportiva / Marca</option>
+                                        <option value="Sesión de Retrato / Editorial">Sesión de Retrato / Editorial</option>
+                                        <option value="Fotografía de Arquitectura">Fotografía de Arquitectura & Espacios</option>
+                                        <option value="Expedición / Naturaleza">Documental & Naturaleza</option>
+                                        <option value="Licencia de Obra Impresa">Adquisición de Obra Fine Art</option>
+                                    </select>
+                                </div>
+                                <!-- Fecha Estimada -->
+                                <div>
+                                    <label for="date" class="block text-xs font-mono uppercase tracking-wider text-zinc-300 mb-2">Fecha o Mes Estimado</label>
+                                    <input type="date" id="date" name="date"
+                                        class="w-full px-4 py-3 rounded-xl bg-studio-950 border border-white/10 text-sm text-white focus:outline-none focus:border-white/40 transition-colors [color-scheme:dark]">
+                                </div>
+                            </div>
+
+                            <!-- Mensaje -->
+                            <div>
+                                <label for="message" class="block text-xs font-mono uppercase tracking-wider text-zinc-300 mb-2">Detalles del Proyecto / Locación *</label>
+                                <textarea id="message" name="message" rows="4" required placeholder="Cuéntame sobre la idea visual, ubicación, uso de las imágenes o requerimientos técnicos..."
+                                    class="w-full px-4 py-3 rounded-xl bg-studio-950 border border-white/10 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/40 transition-colors resize-none"></textarea>
+                            </div>
+
+                            <!-- Mensaje de error de validación -->
+                            <p id="form-error" class="hidden text-xs text-rose-400 font-mono"></p>
+
+                            <div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <span class="text-[11px] text-zinc-400 font-mono">* Campos obligatorios. Privacidad garantizada.</span>
+                                <button type="submit" class="px-6 py-3.5 rounded-xl bg-white text-zinc-950 font-medium text-xs uppercase tracking-widest hover:bg-zinc-200 transition-all flex items-center justify-center gap-2">
+                                    <span>Enviar Consulta</span>
+                                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==========================================
+         PIE DE PÁGINA MINIMALISTA
+    =========================================== -->
+    <footer class="border-t border-white/[0.07] py-6 px-4 sm:px-6 lg:px-8 mt-auto bg-studio-950">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500 font-mono">
+            <p id="footer-copy">&copy; 2026 Portafolio. Todos los derechos reservados.</p>
+            <div class="flex items-center gap-6">
+                <button onclick="switchTab('galeria')" class="hover:text-zinc-300 transition-colors">Galería</button>
+                <button onclick="switchTab('sobremi')" class="hover:text-zinc-300 transition-colors">Sobre Mí</button>
+                <button onclick="switchTab('contacto')" class="hover:text-zinc-300 transition-colors">Contacto</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==========================================
+         MODAL LIGHTBOX (VISOR A PANTALLA COMPLETA)
+    =========================================== -->
+    <div id="lightbox" class="on-dark fixed inset-0 z-50 hidden bg-black/95 backdrop-blur-xl flex-col justify-between p-4 sm:p-6 transition-opacity duration-300 opacity-0" role="dialog" aria-modal="true" aria-label="Visor de fotografía a pantalla completa">
+        
+        <!-- Barra Superior del Lightbox -->
+        <div class="flex items-center justify-between w-full max-w-7xl mx-auto z-10">
+            <div class="flex items-center gap-3">
+                <span id="lb-counter" class="text-xs font-mono text-zinc-300 bg-studio-900 px-3 py-1.5 rounded-full border border-white/10">01 / 12</span>
+                <span id="lb-category" class="text-xs font-mono uppercase tracking-widest text-zinc-300 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">CATEGORÍA</span>
+                <span id="lb-light-badge" class="hidden md:inline-flex items-center gap-1.5 text-xs font-mono text-zinc-400 px-3 py-1.5 rounded-full bg-studio-900/80 border border-white/5">
+                    <i data-lucide="sun-medium" class="w-3.5 h-3.5 text-amber-300/80"></i>
+                    <span id="lb-lighting">Luz Natural</span>
+                </span>
+            </div>
+            <button onclick="closeLightbox()" class="p-2.5 rounded-full bg-white/5 hover:bg-white/15 text-white border border-white/10 transition-colors" aria-label="Cerrar visor (Tecla Escape)">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Contenedor Central de la Imagen + Controles Laterales -->
+        <div class="relative flex-grow flex items-center justify-center w-full max-w-7xl mx-auto my-3 overflow-hidden" onclick="handleLightboxBackdropClick(event)">
+            
+            <!-- Botón Anterior -->
+            <button onclick="changeLightboxImage(-1); event.stopPropagation();" class="absolute left-2 sm:left-4 z-20 p-3.5 rounded-full bg-studio-900/85 hover:bg-white text-white hover:text-zinc-950 border border-white/10 transition-all shadow-lg" aria-label="Fotografía anterior">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Imagen Principal con transición suave -->
+            <div class="relative flex items-center justify-center max-h-[64vh] max-w-full">
+                <img id="lb-image" src="" alt="" class="lb-smooth-target max-h-[64vh] max-w-full object-contain rounded-lg shadow-2xl select-none border border-white/[0.06]">
+            </div>
+
+            <!-- Botón Siguiente -->
+            <button onclick="changeLightboxImage(1); event.stopPropagation();" class="absolute right-2 sm:right-4 z-20 p-3.5 rounded-full bg-studio-900/85 hover:bg-white text-white hover:text-zinc-950 border border-white/10 transition-all shadow-lg" aria-label="Siguiente fotografía">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Barra Inferior Refinada: Ficha Artística + Especificaciones EXIF Estructuradas -->
+        <div id="lb-meta-panel" class="lb-smooth-target w-full max-w-6xl mx-auto bg-studio-900/95 border border-white/10 rounded-2xl p-4 sm:p-5 z-10 shadow-2xl">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center">
+                
+                <!-- Información Artística (Izquierda - 5 columnas) -->
+                <div class="lg:col-span-5 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-white/10 pb-3.5 lg:pb-0 lg:pr-6">
+                    <div class="flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-zinc-400 mb-1">
+                        <span id="lb-code">REF-01</span>
+                        <span>&middot;</span>
+                        <span id="lb-location" class="inline-flex items-center gap-1 text-zinc-300">
+                            <i data-lucide="map-pin" class="w-3 h-3 text-zinc-400"></i>
+                            <span>Locación</span>
+                        </span>
+                    </div>
+                    <h3 id="lb-title" class="font-serif text-2xl sm:text-3xl text-white leading-tight">Título de la Obra</h3>
+                    <p id="lb-notes" class="text-xs text-zinc-400 mt-1.5 line-clamp-1 font-light">Nota técnica de iluminación y captura en locación.</p>
+                </div>
+
+                <!-- Grilla de Especificaciones EXIF (Derecha - 7 columnas) -->
+                <div class="lg:col-span-7 grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                    <!-- Cuerpo de Cámara -->
+                    <div class="bg-studio-950/90 border border-white/[0.06] rounded-xl p-2.5 flex flex-col justify-between">
+                        <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                            <i data-lucide="camera" class="w-3 h-3 text-zinc-400"></i> Cámara
+                        </span>
+                        <span id="lb-camera" class="text-xs font-mono font-medium text-zinc-100 mt-1 truncate">Sony A1</span>
+                    </div>
+
+                    <!-- Óptica / Lente -->
+                    <div class="bg-studio-950/90 border border-white/[0.06] rounded-xl p-2.5 flex flex-col justify-between">
+                        <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                            <i data-lucide="focus" class="w-3 h-3 text-zinc-400"></i> Óptica
+                        </span>
+                        <span id="lb-lens" class="text-xs font-mono font-medium text-zinc-100 mt-1 truncate">85mm GM</span>
+                    </div>
+
+                    <!-- Apertura -->
+                    <div class="bg-studio-950/90 border border-white/[0.06] rounded-xl p-2.5 flex flex-col justify-between">
+                        <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                            <i data-lucide="aperture" class="w-3 h-3 text-zinc-400"></i> Apertura
+                        </span>
+                        <span id="lb-aperture" class="text-xs font-mono font-medium text-zinc-100 mt-1">f/1.4</span>
+                    </div>
+
+                    <!-- Velocidad de Obturación -->
+                    <div class="bg-studio-950/90 border border-white/[0.06] rounded-xl p-2.5 flex flex-col justify-between">
+                        <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                            <i data-lucide="timer" class="w-3 h-3 text-zinc-400"></i> Obturación
+                        </span>
+                        <span id="lb-shutter" class="text-xs font-mono font-medium text-zinc-100 mt-1">1/1000s</span>
+                    </div>
+
+                    <!-- Sensibilidad ISO -->
+                    <div class="col-span-2 sm:col-span-1 bg-studio-950/90 border border-white/[0.06] rounded-xl p-2.5 flex flex-col justify-between">
+                        <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                            <i data-lucide="gauge" class="w-3 h-3 text-zinc-400"></i> Sensibilidad
+                        </span>
+                        <span id="lb-iso" class="text-xs font-mono font-medium text-zinc-100 mt-1">ISO 100</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         LÓGICA DE LA APLICACIÓN (JAVASCRIPT VANILLA)
+    =========================================== -->
+    <script src="assets/js/portfolio.js?v=8"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{"time":"2026-11-09T21:58:15.452Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-09T22:13:31.135Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-09T22:33:15.419Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-09T22:33:25.753Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-09T22:33:33.648Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-09T22:33:33.721Z","ip":"127.0.0.1","action":"content_save","detail":"Contenido de \"Sobre mí\" y \"Contacto\" actualizado"}
+{"time":"2026-11-09T22:33:33.768Z","ip":"127.0.0.1","action":"content_save","detail":"Contenido de \"Sobre mí\" y \"Contacto\" actualizado"}
+{"time":"2026-11-09T22:34:13.896Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-09T23:01:08.708Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:00:33.460Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:00:36.910Z","ip":"127.0.0.1","action":"delete","detail":"Obra eliminada: Vértigo en el Atlántico"}
+{"time":"2026-11-10T01:00:53.444Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:00:56.975Z","ip":"127.0.0.1","action":"delete","detail":"Obra eliminada: Estudio en Claroscuro III"}
+{"time":"2026-11-10T01:01:44.588Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:02:04.998Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:09:53.922Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:11:38.935Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:11:38.978Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:12:17.437Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:12:19.274Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:12:19.521Z","ip":"127.0.0.1","action":"delete","detail":"Obra eliminada: Estudio en Claroscuro III"}
+{"time":"2026-11-10T01:12:33.288Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:12:34.883Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:12:35.110Z","ip":"127.0.0.1","action":"delete","detail":"Obra eliminada: Simetría de Hormigón"}
+{"time":"2026-11-10T01:52:54.845Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:53:05.261Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:53:15.722Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:53:33.323Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:53:43.757Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T01:53:54.158Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T02:07:44.022Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T02:07:54.470Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T02:08:03.525Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T02:08:17.783Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T02:08:28.203Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}
+{"time":"2026-11-10T02:08:37.258Z","ip":"127.0.0.1","action":"login","detail":"Ingreso correcto: admin"}

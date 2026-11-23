@@ -1,0 +1,138 @@
+{
+    "about": {
+        "eyebrow": "Perfil & Trayectoria",
+        "heading": "Detrás del Lente",
+        "portrait": {
+            "src": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=85",
+            "alt": "Retrato del fotógrafo en estudio",
+            "role": "Director de Fotografía",
+            "name": ""
+        },
+        "stats": [
+            {
+                "value": "10+",
+                "label": "Años Exp."
+            },
+            {
+                "value": "140+",
+                "label": "Campañas"
+            },
+            {
+                "value": "18",
+                "label": "Premios Int."
+            }
+        ],
+        "bio": {
+            "heading": "Biografía Profesional",
+            "quote": "“Busco la quietud dentro del movimiento y la geometría oculta en la luz natural.”",
+            "paragraphs": [
+                "Soy fotógrafo documental, deportivo y editorial con base en Buenos Aires y Madrid. Durante la última década me he especializado en capturar la tensión atlética de alto rendimiento, retratos de carácter íntimo y la sobriedad de la arquitectura contemporánea.",
+                "Mi trabajo se caracteriza por un enfoque minimalista y ordenado: elimino las distracciones visuales para que la composición, la textura y el gesto humano cuenten toda la historia sin artificios innecesarios."
+            ]
+        },
+        "specialties": {
+            "heading": "Áreas de Especialización",
+            "items": [
+                {
+                    "title": "Cobertura Deportiva & Acción",
+                    "text": "Congelación de alta velocidad, seguimiento en pista y narrativa visual para atletas y marcas técnicas."
+                },
+                {
+                    "title": "Retrato Editorial & Estudio",
+                    "text": "Iluminación controlada en clave baja, dirección de pose orgánica para perfiles corporativos y artistas."
+                },
+                {
+                    "title": "Arquitectura & Interiorismo",
+                    "text": "Corrección de perspectiva rigurosa y estudio de la luz solar a lo largo del día para estudios de diseño."
+                },
+                {
+                    "title": "Expediciones & Naturaleza",
+                    "text": "Documentación de paisajes remotos en condiciones climáticas extremas para publicaciones impresas."
+                }
+            ]
+        },
+        "gear": {
+            "heading": "Equipo Técnico en Estudio y Campo",
+            "items": [
+                {
+                    "label": "Cuerpos Principales",
+                    "value": "Sony Alpha 1 (50MP) · Leica Q3 (Reportaje)"
+                },
+                {
+                    "label": "Ópticas Fijas (Primes)",
+                    "value": "35mm f/1.4 GM · 50mm f/1.2 GM · 85mm f/1.4 GM"
+                },
+                {
+                    "label": "Teleobjetivos & Acción",
+                    "value": "70-200mm f/2.8 GM OSS II · 400mm f/2.8 GM"
+                },
+                {
+                    "label": "Iluminación & Color",
+                    "value": "Profoto B10X Plus Duo Kit · Flujo calibrado EIZO ColorEdge"
+                }
+            ]
+        },
+        "cta": {
+            "title": "¿Tienes un proyecto visual en mente?",
+            "text": "Disponible para comisiones comerciales y editoriales a nivel global.",
+            "button": "Reservar Sesión"
+        }
+    },
+    "contact": {
+        "eyebrow": "Consultas & Reservas",
+        "heading": "Iniciar una Conversación",
+        "email": {
+            "label": "Correo Directo de Estudio",
+            "value": "contacto@estudio.com"
+        },
+        "location": {
+            "label": "Estudio Base & Cobertura",
+            "title": "Palermo Soho, Buenos Aires / Madrid",
+            "note": "Pasaporte al día. Disponible para asignaciones internacionales con 72h de preaviso."
+        },
+        "delivery": {
+            "label": "Tiempos de Entrega Habituales",
+            "items": [
+                "Pre-selección en vivo (Tethering) durante sesión",
+                "Entrega deportiva/prensa en menos de 12 horas",
+                "Retoque editorial de alta gama en 5 días hábiles"
+            ]
+        },
+        "socials": {
+            "label": "Canales & Portafolios Externos",
+            "items": [
+                {
+                    "icon": "instagram",
+                    "label": "Instagram",
+                    "url": "#"
+                },
+                {
+                    "icon": "globe",
+                    "label": "Behance",
+                    "url": "#"
+                },
+                {
+                    "icon": "linkedin",
+                    "label": "LinkedIn",
+                    "url": "#"
+                },
+                {
+                    "icon": "book-open",
+                    "label": "Press Kit PDF",
+                    "url": "#"
+                }
+            ]
+        },
+        "form": {
+            "title": "Solicitud de Cotización o Reserva",
+            "text": "Completa los detalles del proyecto. Respondo personalmente en menos de 24 horas.",
+            "specialties": [
+                "Cobertura Deportiva / Marca",
+                "Sesión de Retrato / Editorial",
+                "Fotografía de Arquitectura & Espacios",
+                "Documental & Naturaleza",
+                "Adquisición de Obra Fine Art"
+            ]
+        }
+    }
+}

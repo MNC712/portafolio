@@ -1,0 +1,4 @@
+# El panel del portafolio se sirve desde index.php (no hay index.html acá).
+# Sin esto, al abrir /admin/ Apache hereda "DirectoryIndex index.html" del
+# raíz, no encuentra ese archivo y devuelve 403 Forbidden por "Options -Indexes".
+DirectoryIndex index.php
