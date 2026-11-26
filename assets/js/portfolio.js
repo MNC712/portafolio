@@ -75,6 +75,7 @@ function pfoImageLoaded(img) {
   }
   frame.classList.remove('img-skeleton');
   img.classList.add('is-loaded');
+  img.dispatchEvent(new Event('pfo:image-ready'));
 }
 
 function pfoImageError(img) {
@@ -86,6 +87,7 @@ function pfoImageError(img) {
   }
   if (img.parentElement) img.parentElement.classList.remove('img-skeleton');
   img.classList.add('is-unavailable');
+  img.dispatchEvent(new Event('pfo:image-ready'));
 }
 
 function pfoCard(photo, index) {
@@ -98,7 +100,7 @@ function pfoCard(photo, index) {
 
   return [
     '<article onclick="openLightbox(' + index + ')"',
-    ' class="gallery-card on-dark group cursor-pointer rounded-2xl overflow-hidden bg-studio-900 border border-white/[0.07] hover:border-white/25 relative focus-within:ring-2 focus-within:ring-white/40"',
+    ' class="gallery-card on-dark group cursor-pointer rounded-2xl overflow-hidden bg-studio-900 border border-white/[0.07] relative focus-visible:ring-2 focus-visible:ring-white/40"',
     ' tabindex="0" role="button" aria-label="Ver obra ' + pfoEsc(title) + '">',
     '  <div class="relative w-full overflow-hidden bg-studio-950 img-skeleton" style="aspect-ratio:' + pfoAspect(photo) + ';">',
     '    <img src="' + pfoEsc(thumb) + '" alt="' + pfoEsc(title) + '" loading="lazy"' + autoAttr + fallbackAttr,
@@ -173,7 +175,7 @@ function pfoObserveCards() {
   Array.prototype.forEach.call(cards, function (c) { pfoCardObserver.observe(c); });
 }
 
-function renderGallery(filter) {
+function renderGallery(filter, deferReveal) {
   var grid = document.getElementById('gallery-grid');
   var countLabel = document.getElementById('gallery-count');
   if (!grid) return;
@@ -196,7 +198,7 @@ function renderGallery(filter) {
     if (img.complete && img.naturalWidth) pfoImageLoaded(img);
   });
   pfoIcons();
-  pfoObserveCards();
+  if (!deferReveal) pfoObserveCards();
 }
 
 function filterGallery(category) {
@@ -245,8 +247,9 @@ function pfoRoute() {
   pfoSetMenu(false);
 
   if (isContact) {
-    document.getElementById('contact-heading').focus({ preventScroll: true });
-    document.getElementById('contacto').scrollIntoView({ block: 'start', behavior: 'instant' });
+    var contact = document.getElementById('contacto');
+    contact.focus({ preventScroll: true });
+    contact.scrollIntoView({ block: 'start', behavior: 'instant' });
   } else if (hash === '#galeria' || hash === '#sobremi' || hash === '') {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
@@ -445,7 +448,6 @@ function pfoSetContent(c) {
   /* ---- Contacto ---- */
   var co = c.contact || {};
   pfoSetText('contact-eyebrow', co.eyebrow || '');
-  pfoSetText('contact-heading', co.heading || '');
 
   var em = co.email || {};
   pfoSetText('contact-email-label', em.label || '');
@@ -649,15 +651,41 @@ function toggleMenu() {
 }
 
 /* --- Inicialización ---------------------------------------------------- */
+function pfoPreloadVisible() {
+  if (!document.documentElement.classList.contains('pfo-loading')) return;
+  var images = document.querySelectorAll('.active-view .gallery-img');
+  var header = document.querySelector('header');
+  var topEdge = header ? header.getBoundingClientRect().bottom : 0;
+
+  return Promise.all(Array.from(images).filter(function (img) {
+    var rect = img.getBoundingClientRect();
+    return rect.height > 0 && rect.top < window.innerHeight && rect.bottom > topEdge;
+  }).map(function (img) {
+    return new Promise(function (resolve) {
+      if (img.classList.contains('blur-up')) {
+        if (img.matches('.is-loaded, .is-unavailable')) { resolve(); return; }
+        img.addEventListener('pfo:image-ready', resolve, { once: true });
+      } else {
+        if (img.complete) { resolve(); return; }
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', resolve, { once: true });
+      }
+      img.fetchPriority = 'high';
+      img.loading = 'eager';
+    });
+  }));
+}
+
 function pfoInit() {
-  fetch('api/portfolio.php', { headers: { 'Accept': 'application/json' } })
+  return fetch('api/portfolio.php', { headers: { 'Accept': 'application/json' } })
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function (d) {
       PFO.photos = (d && d.photos) || [];
       PFO.categories = (d && d.categories) || [];
       pfoSetContent(d && d.content);
       renderFilters();
-      renderGallery('todos');
+      renderGallery('todos', document.documentElement.classList.contains('pfo-loading'));
+      return pfoPreloadVisible();
     })
     .catch(function () {
       var grid = document.getElementById('gallery-grid');
@@ -712,7 +740,24 @@ function pfoReady() {
     pfoSetMenu(false);
   });
 
-  pfoInit();
+  var root = document.documentElement;
+  function finishPreload() {
+    if (!root.classList.contains('pfo-loading')) {
+      // El límite de emergencia del documento pudo ejecutarse primero.
+      if (!pfoCardObserver) pfoObserveCards();
+      return;
+    }
+    root.classList.remove('pfo-loading');
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) pfoObserveCards();
+    else setTimeout(function () { if (!pfoCardObserver) pfoObserveCards(); }, 160);
+  }
+
+  var preloadTimeout = setTimeout(finishPreload, 2500);
+  pfoInit().then(function () {
+    clearTimeout(preloadTimeout);
+    finishPreload();
+  });
 }
 
 if (document.readyState === 'loading') {

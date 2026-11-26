@@ -7,9 +7,13 @@
     <!-- Tema (día / noche): aplica la preferencia guardada antes del primer pintado -->
     <script>
         (function () {
+            var root = document.documentElement;
+            root.classList.add('pfo-loading');
+            // Si no arranca el JavaScript del sitio, no dejar la pantalla bloqueada.
+            setTimeout(function () { root.classList.remove('pfo-loading'); }, 4200);
             try {
                 if (localStorage.getItem('f18-theme') === 'light') {
-                    document.documentElement.classList.remove('dark');
+                    root.classList.remove('dark');
                 }
             } catch (e) {}
         })();
@@ -48,6 +52,42 @@
     </script>
 
     <style>
+        #portfolio-preload {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: grid;
+            place-content: center;
+            justify-items: center;
+            gap: 12px;
+            background: #f7f7f8;
+            color: #18181b;
+            font: 0.75rem system-ui, sans-serif;
+            letter-spacing: .1em;
+            text-align: center;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .16s ease-out, visibility .16s;
+        }
+
+        .dark #portfolio-preload { background: #09090b; color: #f4f4f5; }
+        .pfo-loading #portfolio-preload { opacity: 1; visibility: visible; pointer-events: auto; }
+        .pfo-preload-mark {
+            width: 34px;
+            height: 34px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+        }
+        .pfo-loading .pfo-preload-mark {
+            border-right-color: transparent;
+            animation: pfo-preload-spin .8s linear infinite;
+        }
+        @keyframes pfo-preload-spin { to { rotate: 360deg; } }
+        @media (prefers-reduced-motion: reduce) {
+            #portfolio-preload, .pfo-loading .pfo-preload-mark { animation: none; transition: none; }
+        }
+
         /* Estilos base y suavizado tipográfico */
         body {
             background-color: #09090b;
@@ -164,8 +204,12 @@
 
         @media (max-width: 639px) {
             #gallery-grid .gallery-card { border-radius: 10px; }
-            .gallery-card-top { top: 6px; left: 6px; right: 6px; }
-            .gallery-card .gallery-category { padding: 2px 5px; font-size: 9px; letter-spacing: .08em; }
+        }
+
+        @media (max-width: 767px), (pointer: coarse) and (max-height: 540px) {
+            .gallery-card .gallery-card-top,
+            .gallery-card .gallery-info { display: none; }
+            #about-portrait { filter: none; }
         }
 
         /* Detalles del pie: ocultos por defecto (también en móvil).
@@ -177,11 +221,12 @@
             pointer-events: none;
         }
 
-        @media (hover: hover) and (pointer: fine) {
+        @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
             .gallery-card.card-in:hover {
                 transform: translateY(-4px);
                 box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.85);
             }
+            .gallery-card:hover { border-color: rgba(255, 255, 255, .25); }
             .gallery-card:hover .gallery-info,
             .gallery-card:focus-within .gallery-info {
                 opacity: 1;
@@ -217,7 +262,7 @@
             transform: scale(1);
         }
 
-        @media (hover: hover) and (pointer: fine) {
+        @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
             .group:hover .gallery-img.is-loaded { transform: scale(1.045); }
         }
 
@@ -434,6 +479,10 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-zinc-200 selection:text-zinc-950">
+    <div id="portfolio-preload" role="status">
+        <span class="pfo-preload-mark" aria-hidden="true"></span>
+        <span>Cargando portafolio…</span>
+    </div>
 
     <!-- ==========================================
          BARRA DE NAVEGACIÓN SUPERIOR FIJA (STICKY)
@@ -656,14 +705,11 @@
 
                 </div>
             </div>
-        <section id="contacto" class="mt-10 sm:mt-20 pt-7 sm:pt-12 border-t border-white/[0.07]" aria-labelledby="contact-heading">
+        <section id="contacto" class="mt-10 sm:mt-20 pt-7 sm:pt-12 border-t border-white/[0.07]" aria-label="Contacto" tabindex="-1">
             
             <!-- Encabezado de Contacto -->
             <div class="mb-6 sm:mb-12 pb-4 sm:pb-6 border-b border-white/[0.07] text-center md:text-left">
                 <p id="contact-eyebrow" class="page-kicker text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Consultas &amp; Reservas</p>
-                <h2 id="contact-heading" class="page-heading font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight" tabindex="-1">
-                    Iniciar una Conversación
-                </h2>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
@@ -924,6 +970,6 @@
     <!-- ==========================================
          LÓGICA DE LA APLICACIÓN (JAVASCRIPT VANILLA)
     =========================================== -->
-    <script src="assets/js/portfolio.js?v=12"></script>
+    <script src="assets/js/portfolio.js?v=14"></script>
 </body>
 </html>
