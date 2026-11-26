@@ -90,15 +90,14 @@
            aparecer todas al mismo tiempo. */
         .gallery-card {
             opacity: 0;
-            transform: translateY(24px) scale(0.98);
-            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+            transform: translateY(16px);
+            transition: opacity 0.36s ease-out,
                         transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
                         border-color 0.35s ease,
                         box-shadow 0.4s ease;
             /* Masonry: la tarjeta no se fragmenta entre columnas */
             break-inside: avoid;
             margin-bottom: 1rem;
-            will-change: opacity, transform;
         }
 
         .gallery-card.card-in {
@@ -113,10 +112,6 @@
         .gallery-card.card-in:hover {
             transform: translateY(-4px);
             box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.85);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .gallery-card { transition: opacity 0.2s ease; transform: none; }
         }
 
         /* Detalles del pie: ocultos por defecto (también en móvil).
@@ -168,20 +163,39 @@
             transform: scale(1.045);
         }
 
-        /* Carga progresiva: la imagen aparece desenfocada y luego enfoca. */
+        /* El enfoque empieza solo cuando coinciden carga y entrada en pantalla. */
         .gallery-img.blur-up {
-            opacity: 0;
-            filter: blur(24px);
-            transform: scale(1.05);
-            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                        filter 1s cubic-bezier(0.16, 1, 0.3, 1),
-                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: scale(1);
+            transition: opacity 0.2s ease-out, transform 0.5s ease-out;
         }
 
-        .gallery-img.blur-up.is-loaded {
+        .gallery-img.blur-up.is-unavailable {
             opacity: 1;
-            filter: blur(0);
-            transform: scale(1);
+        }
+
+        .gallery-card:not(.card-in) .img-skeleton {
+            animation: none;
+        }
+
+        .gallery-card.card-in .blur-up.is-loaded {
+            animation: gallery-focus 0.95s ease-out;
+        }
+
+        @keyframes gallery-focus {
+            0%, 16% { filter: blur(14px); scale: 1.055; }
+            78% { filter: blur(0.8px); scale: 1.005; }
+            100% { filter: blur(0); scale: 1; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .gallery-card, .gallery-card.card-in, .gallery-card.card-in:hover {
+                opacity: 1;
+                transform: none;
+                transition: none;
+            }
+            .gallery-card.card-in .blur-up.is-loaded,
+            .gallery-card .img-skeleton { animation: none; }
+            .gallery-card .blur-up { transition: none; }
         }
 
         /* Transición fluida para la imagen y metadatos del Lightbox */
@@ -848,6 +862,6 @@
     <!-- ==========================================
          LÓGICA DE LA APLICACIÓN (JAVASCRIPT VANILLA)
     =========================================== -->
-    <script src="assets/js/portfolio.js?v=9"></script>
+    <script src="assets/js/portfolio.js?v=10"></script>
 </body>
 </html>

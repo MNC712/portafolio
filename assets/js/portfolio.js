@@ -67,31 +67,26 @@ function pfoAspect(photo) {
   return 4 / 3;
 }
 
-/* Revela la imagen tras pintar al menos una vez el estado desenfocado.
-   El doble requestAnimationFrame garantiza que la transición se vea
-   también al re-filtrar, cuando la imagen ya está en caché y su `onload`
-   se dispararía antes del primer pintado. */
-function pfoRevealImage(img) {
-  requestAnimationFrame(function () {
-    requestAnimationFrame(function () {
-      img.classList.add('is-loaded');
-      if (img.parentElement) img.parentElement.classList.remove('img-skeleton');
-    });
-  });
-}
-
 function pfoImageLoaded(img) {
-  pfoRevealImage(img);
+  var frame = img.parentElement;
+  if (!frame || !img.naturalWidth) return;
   if (img.dataset.auto === '1' && img.naturalWidth) {
     var r = img.naturalWidth / img.naturalHeight;
-    img.parentElement.style.aspectRatio = Math.max(0.6, Math.min(1.9, r));
+    frame.style.aspectRatio = Math.max(0.6, Math.min(1.9, r));
   }
+  frame.classList.remove('img-skeleton');
+  img.classList.add('is-loaded');
 }
 
 function pfoImageError(img) {
-  img.onerror = null;
-  img.src = 'https://placehold.co/800x600/121215/e4e4e7?text=Portafolio';
-  pfoRevealImage(img);
+  var fallback = img.dataset.fallback;
+  if (fallback) {
+    delete img.dataset.fallback;
+    img.src = fallback;
+    return;
+  }
+  if (img.parentElement) img.parentElement.classList.remove('img-skeleton');
+  img.classList.add('is-unavailable');
 }
 
 function pfoCard(photo, index) {
@@ -100,13 +95,14 @@ function pfoCard(photo, index) {
   var label = photo.categoryLabel || photo.category || '';
   var hasDims = (parseFloat(photo.w) > 0 && parseFloat(photo.h) > 0);
   var autoAttr = hasDims ? '' : ' data-auto="1"';
+  var fallbackAttr = photo.src && photo.src !== thumb ? ' data-fallback="' + pfoEsc(photo.src) + '"' : '';
 
   return [
     '<article onclick="openLightbox(' + index + ')"',
     ' class="gallery-card on-dark group cursor-pointer rounded-2xl overflow-hidden bg-studio-900 border border-white/[0.07] hover:border-white/25 relative focus-within:ring-2 focus-within:ring-white/40"',
     ' tabindex="0" role="button" aria-label="Ver obra ' + pfoEsc(title) + '">',
     '  <div class="relative w-full overflow-hidden bg-studio-950 img-skeleton" style="aspect-ratio:' + pfoAspect(photo) + ';">',
-    '    <img src="' + pfoEsc(thumb) + '" alt="' + pfoEsc(title) + '" loading="lazy"' + autoAttr,
+    '    <img src="' + pfoEsc(thumb) + '" alt="' + pfoEsc(title) + '" loading="lazy"' + autoAttr + fallbackAttr,
     '      onload="pfoImageLoaded(this)" onerror="pfoImageError(this)"',
     '      class="gallery-img blur-up w-full h-full object-cover">',
     '    <div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-20">',
@@ -142,15 +138,11 @@ function pfoCard(photo, index) {
    aparecer todas juntas. Las que ya están visibles entran escalonadas. */
 var pfoCardObserver = null;
 
-function pfoCardsRevealAll() {
-  var grid = document.getElementById('gallery-grid');
-  if (!grid) return;
-  Array.prototype.forEach.call(grid.querySelectorAll('.gallery-card'), function (c) {
-    c.classList.add('card-in');
-  });
-}
-
 function pfoObserveCards() {
+  if (pfoCardObserver) {
+    pfoCardObserver.disconnect();
+    pfoCardObserver = null;
+  }
   var grid = document.getElementById('gallery-grid');
   if (!grid) return;
 
@@ -159,20 +151,23 @@ function pfoObserveCards() {
 
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduced || !('IntersectionObserver' in window)) {
-    pfoCardsRevealAll();
+    Array.prototype.forEach.call(cards, function (card) { card.classList.add('card-in'); });
     return;
   }
 
-  if (pfoCardObserver) pfoCardObserver.disconnect();
-
   pfoCardObserver = new IntersectionObserver(function (entries, obs) {
     var visible = entries.filter(function (e) { return e.isIntersecting; });
+    visible.sort(function (a, b) {
+      return a.boundingClientRect.top - b.boundingClientRect.top ||
+        a.boundingClientRect.left - b.boundingClientRect.left;
+    });
     visible.forEach(function (entry, i) {
-      var card = entry.target;
-      card.style.transitionDelay = (i * 70) + 'ms';
-      card.classList.add('card-in');
-      setTimeout(function () { card.style.transitionDelay = ''; }, 900 + i * 70);
-      obs.unobserve(card);
+      obs.unobserve(entry.target);
+      // Se retrasa la entrada, no solo su transición, para sincronizar el enfoque.
+      if (i === 0) entry.target.classList.add('card-in');
+      else setTimeout(function () {
+        if (entry.target.isConnected) entry.target.classList.add('card-in');
+      }, Math.min(i, 8) * 100);
     });
   }, { rootMargin: '0px 0px -6% 0px', threshold: 0.08 });
 
@@ -193,10 +188,14 @@ function renderGallery(filter) {
 
   if (!PFO.filtered.length) {
     grid.innerHTML = '<p class="text-center text-sm text-zinc-500 py-16 font-mono" style="column-span:all">Próximamente: trabajos seleccionados.</p>';
+    pfoObserveCards();
     return;
   }
 
   grid.innerHTML = PFO.filtered.map(pfoCard).join('');
+  Array.prototype.forEach.call(grid.querySelectorAll('.gallery-img'), function (img) {
+    if (img.complete && img.naturalWidth) pfoImageLoaded(img);
+  });
   pfoIcons();
   pfoObserveCards();
 }
@@ -667,6 +666,12 @@ function pfoInit() {
 }
 
 function pfoReady() {
+  var gallery = document.getElementById('gallery-grid');
+  if (gallery) gallery.addEventListener('focusin', function (event) {
+    var card = event.target.closest('.gallery-card');
+    if (card) card.classList.add('card-in');
+  });
+
   var toggle = document.getElementById('theme-toggle');
   if (toggle) toggle.addEventListener('click', toggleTheme);
 
