@@ -163,6 +163,7 @@
     if (name === 'actividad') loadPhotos();
     window.scrollTo(0, 0);
     if (name === 'contenido' && !state.content) loadContent();
+    if (name === 'mensajes') loadInbox(false);
   }
 
   function bindLogout() {
@@ -1000,6 +1001,61 @@
     });
   }
 
+  /* --- Bandeja de entrada ------------------------------------------------ */
+  var inboxCursor = null;
+  var inboxLoading = false;
+  var mailLabels = {
+    accepted: 'Aceptado por el servidor de correo',
+    failed: 'No se pudo enviar el correo',
+    not_configured: 'Sin correo de destino configurado',
+    pending: 'Resultado de correo no confirmado'
+  };
+
+  function renderInboxMessage(message) {
+    var reply = 'mailto:' + encodeURIComponent(message.email).replace('%40', '@');
+    return '<details class="inbox-message">'
+      + '<summary><strong>' + esc(message.name) + '</strong>'
+      + '<span class="inbox-project">' + esc(message.projectType) + '</span>'
+      + '<time datetime="' + esc(message.receivedAt) + '">' + esc(fmtDate(message.receivedAt)) + '</time></summary>'
+      + '<div class="inbox-body"><p><strong>Correo del remitente:</strong> <a href="' + esc(reply) + '">' + esc(message.email) + '</a></p>'
+      + (message.date ? '<p><strong>Fecha estimada:</strong> ' + esc(message.date) + '</p>' : '')
+      + '<p><strong>Notificación:</strong> ' + esc(mailLabels[message.mailStatus] || mailLabels.pending)
+      + (message.recipient && message.mailStatus !== 'not_configured' ? ' · ' + esc(message.recipient) : '') + '</p>'
+      + '<p class="inbox-text">' + esc(message.message) + '</p></div></details>';
+  }
+
+  async function loadInbox(append) {
+    var list = $('#inbox-list');
+    if (!list || inboxLoading || (append && !inboxCursor)) return;
+    var status = $('#inbox-status');
+    var more = $('#inbox-more');
+    var reload = $('#reload-inbox');
+    inboxLoading = more.disabled = reload.disabled = true;
+    status.textContent = 'Cargando mensajes…';
+    try {
+      var d = await api('inbox.php' + (append ? '?before=' + encodeURIComponent(inboxCursor) : ''));
+      if (d._status === 401) { location.reload(); return; }
+      if (!d.ok) throw new Error(d.error || 'No se pudo cargar la bandeja.');
+      var html = d.messages.map(renderInboxMessage).join('');
+      if (append) list.insertAdjacentHTML('beforeend', html);
+      else list.innerHTML = html;
+      inboxCursor = d.next;
+      more.classList.toggle('hidden', !inboxCursor);
+      $('#inbox-recipient').textContent = d.recipient ? 'Correo de destino: ' + d.recipient
+        : 'No hay un correo real configurado. Podés asignarlo en Contenido → Contacto → Correo directo.';
+      status.textContent = list.children.length ? list.children.length + ' mensajes mostrados.' : 'Todavía no hay mensajes.';
+    } catch (error) {
+      status.textContent = error instanceof TypeError ? 'No se pudo conectar con el servidor.' : error.message;
+    } finally {
+      inboxLoading = more.disabled = reload.disabled = false;
+    }
+  }
+
+  function bindInbox() {
+    $('#reload-inbox').addEventListener('click', function () { loadInbox(false); });
+    $('#inbox-more').addEventListener('click', function () { loadInbox(true); });
+  }
+
   /* --- Cuenta ------------------------------------------------------------ */
   function bindAccount() {
     var form = $('#password-form');
@@ -1036,6 +1092,7 @@
     bindUpload();
     bindQueueRetry();
     bindContent();
+    bindInbox();
     bindLogout();
     bindAccount();
     refreshCsrf(); // toma el token vigente de la sesión antes de operar

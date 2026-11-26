@@ -13,6 +13,10 @@ define('ADMIN_DEFAULT_PASS', 'mateo2026');
 // Nombre visible en el panel de administración.
 define('APP_NAME', 'Portafolio');
 
+// Contacto: se usa mail() con el transporte de correo configurado en PHP.
+// F18_CONTACT_FROM (opcional) debe ser un remitente autorizado por el hosting.
+// Si no se define, el transporte de PHP debe tener un remitente predeterminado.
+
 // Tamaño máximo por archivo subido (bytes). 15 MB.
 define('MAX_UPLOAD_BYTES', 15 * 1024 * 1024);
 

@@ -20,7 +20,7 @@ $csrf   = $authed ? csrf_token() : '';
     <meta name="robots" content="noindex, nofollow">
     <title>Panel · <?php echo htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="../assets/vendor/fonts.css?v=6">
-    <link rel="stylesheet" href="../assets/css/admin.css?v=10">
+    <link rel="stylesheet" href="../assets/css/admin.css?v=11">
 </head>
 <body>
 
@@ -67,6 +67,7 @@ $csrf   = $authed ? csrf_token() : '';
             <button class="tab active" aria-current="page" data-tab="obras"><i aria-hidden="true">01</i>Obras</button>
             <button class="tab" data-tab="subir"><i aria-hidden="true">02</i>Subir</button>
             <button class="tab" data-tab="contenido"><i aria-hidden="true">03</i>Contenido</button>
+            <button class="tab" data-tab="mensajes"><i aria-hidden="true">06</i>Mensajes</button>
             <button class="tab" data-tab="actividad"><i aria-hidden="true">04</i>Actividad</button>
             <button class="tab" data-tab="cuenta"><i aria-hidden="true">05</i>Cuenta</button>
         </nav>
@@ -235,6 +236,7 @@ $csrf   = $authed ? csrf_token() : '';
                             <label>Etiqueta<input id="c-contact-email-label"></label>
                             <label>Correo<input id="c-contact-email-value" type="email"></label>
                         </div>
+                        <p class="muted content-hint">Las consultas del formulario se envían a este correo y quedan guardadas en Mensajes.</p>
                     </div>
 
                     <div class="content-block">
@@ -269,6 +271,18 @@ $csrf   = $authed ? csrf_token() : '';
                 </details>
 
             </div>
+        </section>
+
+        <!-- ---------------- Mensajes ---------------- -->
+        <section id="panel-mensajes" class="panel">
+            <div class="section-head">
+                <div><small class="kicker">06 / Contacto</small><h1>Bandeja de entrada</h1></div>
+                <button id="reload-inbox" class="btn ghost small" type="button">Actualizar</button>
+            </div>
+            <p id="inbox-recipient" class="muted content-hint"></p>
+            <p id="inbox-status" class="muted" role="status"></p>
+            <div id="inbox-list" class="inbox-list"></div>
+            <button id="inbox-more" class="btn ghost small hidden" type="button">Ver mensajes anteriores</button>
         </section>
 
         <!-- ---------------- Actividad ---------------- -->
@@ -378,6 +392,6 @@ $csrf   = $authed ? csrf_token() : '';
 
 <?php endif; ?>
 
-<script src="../assets/js/admin.js?v=10"></script>
+<script src="../assets/js/admin.js?v=11"></script>
 </body>
 </html>

@@ -571,37 +571,46 @@ function copyEmail() {
   }
 }
 
-function handleContactSubmit(event) {
+async function handleContactSubmit(event) {
   event.preventDefault();
 
-  var name = (document.getElementById('name') || {}).value || '';
-  var email = (document.getElementById('email') || {}).value || '';
-  var projectType = (document.getElementById('project-type') || {}).value || '';
-  var date = (document.getElementById('date') || {}).value || '';
-  var message = (document.getElementById('message') || {}).value || '';
-
+  var form = event.currentTarget;
+  var button = form.querySelector('button[type="submit"]');
+  if (button.disabled) return;
+  var label = button.querySelector('span');
   var errorEl = document.getElementById('form-error');
   var successBox = document.getElementById('form-success');
   var successDetails = document.getElementById('form-success-details');
+  errorEl.classList.add('hidden');
+  successBox.classList.add('hidden');
+  if (!form.reportValidity()) return;
 
-  if (!name.trim() || !email.trim() || !projectType || !message.trim()) {
-    if (errorEl) {
-      errorEl.textContent = 'Por favor, completa todos los campos marcados como obligatorios (*).';
-      errorEl.classList.remove('hidden');
+  var payload = {};
+  new FormData(form).forEach(function (value, key) { payload[key] = value; });
+  button.disabled = true;
+  label.textContent = 'Enviando…';
+  try {
+    var response = await fetch(form.action, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var result = await response.json().catch(function () { return null; });
+    if (!response.ok || !result || !result.ok) {
+      throw new Error((result && result.error) || 'No se pudo confirmar la recepción. Inténtalo de nuevo más tarde.');
     }
-    return;
+    form.reset();
+    successDetails.textContent = 'Gracias, ' + payload.name.trim() + '. Recibimos tu consulta y podremos responderte a ' + payload.email.trim() + '.';
+    successBox.classList.remove('hidden');
+  } catch (error) {
+    errorEl.textContent = error instanceof TypeError
+      ? 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.'
+      : error.message;
+    errorEl.classList.remove('hidden');
+  } finally {
+    button.disabled = false;
+    label.textContent = 'Enviar Consulta';
   }
-
-  if (errorEl) errorEl.classList.add('hidden');
-
-  var dateText = date ? ' para la fecha estimada (' + date + ')' : '';
-  if (successDetails) {
-    successDetails.textContent = 'Gracias, ' + name.trim() + '. He registrado tu solicitud sobre "' + projectType + '"' + dateText + '. Te enviaré una respuesta detallada a ' + email.trim() + ' muy pronto.';
-  }
-  if (successBox) successBox.classList.remove('hidden');
-
-  var form = document.getElementById('contact-form');
-  if (form) form.reset();
 }
 
 /* --- Tema (día / noche) ------------------------------------------------ */

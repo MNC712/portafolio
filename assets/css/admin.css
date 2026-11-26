@@ -413,6 +413,19 @@ th { background: var(--panel-2); }
 .queue-status.duplicate { color: #82590e; }
 .alert.ok { color: var(--ok); }
 .queue-bar { background: var(--line-soft); }
+.inbox-list { display: grid; gap: 8px; margin-block: 12px 16px; }
+.inbox-message { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); overflow-wrap: anywhere; }
+.inbox-message summary { padding: 12px 16px; cursor: pointer; }
+.inbox-message summary strong { margin-inline: 6px 12px; }
+.inbox-message summary:focus-visible { outline-offset: -3px; }
+.inbox-message time, .inbox-project { color: var(--muted); font-size: .86rem; }
+.inbox-message time { float: right; margin-inline-start: 12px; }
+.inbox-body { padding: 0 16px 16px; font-size: .9rem; }
+.inbox-body p { margin: 8px 0 0; }
+.inbox-text { white-space: pre-wrap; border-top: 1px solid var(--line); padding-top: 12px; }
+@media (max-width: 600px) {
+  .inbox-message time, .inbox-project { display: block; float: none; margin: 4px 0 0 20px; }
+}
 @media (min-width: 901px) {
   body:has(.topbar) { padding-left: 208px; }
   .topbar { position: fixed; inset: 0 auto 0 0; width: 208px; flex-direction: column; align-items: stretch; flex-wrap: nowrap; padding: 32px 16px 20px; gap: 40px; overflow-y: auto; }
