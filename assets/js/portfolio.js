@@ -750,7 +750,7 @@ function pfoReady() {
     root.classList.remove('pfo-loading');
     var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reducedMotion) pfoObserveCards();
-    else setTimeout(function () { if (!pfoCardObserver) pfoObserveCards(); }, 160);
+    else setTimeout(function () { if (!pfoCardObserver) pfoObserveCards(); }, 320);
   }
 
   var preloadTimeout = setTimeout(finishPreload, 2500);
