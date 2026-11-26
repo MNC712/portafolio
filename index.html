@@ -74,6 +74,41 @@
             transform: translateY(0);
         }
 
+        main > .spa-view { scroll-margin-top: calc(6.75rem + 1px); }
+        #contacto { scroll-margin-top: 6rem; }
+        @media (min-width: 640px) {
+            main > .spa-view { scroll-margin-top: calc(8.5rem + 1px); }
+        }
+        #gallery-filters .filter-btn { max-width: 100%; overflow-wrap: anywhere; }
+
+        @media (max-width: 767px) {
+            #gallery-intro { text-align: center; }
+            #gallery-filters {
+                align-self: center;
+                justify-content: center;
+                gap: 3px;
+                padding: 3px;
+            }
+            #gallery-filters .filter-btn {
+                font-size: 0.625rem;
+                line-height: 1.2;
+                letter-spacing: .06em;
+                min-height: 32px;
+                padding: 4px clamp(5px, 1.6vw, 10px);
+            }
+            main .page-heading {
+                font-size: clamp(1.65rem, 6.3vw, 2.4rem);
+                line-height: 1.12;
+                overflow-wrap: anywhere;
+            }
+            main .page-kicker {
+                margin-bottom: 4px;
+                font-size: 0.625rem;
+                line-height: 1.4;
+                letter-spacing: .13em;
+            }
+        }
+
         /* Contenedor de la galería con transición suave al filtrar */
         #gallery-grid {
             --gallery-gap: clamp(6px, 1.8vw, 12px);
@@ -201,12 +236,12 @@
         }
 
         .gallery-card.card-in .blur-up.is-loaded {
-            animation: gallery-focus 0.95s ease-out;
+            animation: gallery-focus 0.62s ease-out;
         }
 
         @keyframes gallery-focus {
-            0%, 16% { filter: blur(14px); scale: 1.055; }
-            78% { filter: blur(0.8px); scale: 1.005; }
+            0%, 9% { filter: blur(14px); scale: 1.055; }
+            70% { filter: blur(0.8px); scale: 1.005; }
             100% { filter: blur(0); scale: 1; }
         }
 
@@ -407,7 +442,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
             
             <!-- Marca tipográfica (administrable desde el panel) -->
-            <button onclick="switchTab('galeria')" class="min-w-0 text-left group focus-visible:outline focus-visible:outline-2">
+            <a href="#galeria" class="min-w-0 text-left group focus-visible:outline focus-visible:outline-2">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center bg-studio-900 group-hover:border-white/50 transition-colors overflow-hidden shrink-0">
                         <img id="brand-logo" src="" alt="" class="hidden w-full h-full object-cover">
@@ -418,19 +453,16 @@
                         <span id="brand-subtitle" class="block truncate text-[10px] font-mono tracking-[0.25em] text-zinc-400 uppercase">Estudio Visual</span>
                     </div>
                 </div>
-            </button>
+            </a>
 
             <!-- Navegación por Pestañas (SPA) — escritorio -->
             <nav class="hidden lg:flex shrink-0 items-center gap-2 xl:gap-8" aria-label="Navegación Principal">
-                <button onclick="switchTab('galeria')" id="tab-btn-galeria" class="nav-btn active px-3 py-2 text-xs sm:text-sm font-medium tracking-widest uppercase text-white transition-colors">
+                <a href="#galeria" aria-current="page" class="nav-btn active px-3 py-2 text-xs sm:text-sm font-medium tracking-widest uppercase text-white transition-colors">
                     Galería
-                </button>
-                <button onclick="switchTab('sobremi')" id="tab-btn-sobremi" class="nav-btn px-3 py-2 text-xs sm:text-sm font-medium tracking-widest uppercase text-zinc-400 hover:text-zinc-200 transition-colors">
+                </a>
+                <a href="#sobremi" class="nav-btn px-3 py-2 text-xs sm:text-sm font-medium tracking-widest uppercase text-zinc-400 hover:text-zinc-200 transition-colors">
                     Sobre Mí
-                </button>
-                <button onclick="switchTab('contacto')" id="tab-btn-contacto" class="nav-btn px-3 py-2 text-xs sm:text-sm font-medium tracking-widest uppercase text-zinc-400 hover:text-zinc-200 transition-colors">
-                    Contacto
-                </button>
+                </a>
             </nav>
 
             <!-- Acciones rápidas: tema (día / noche), disponibilidad y menú móvil -->
@@ -452,9 +484,8 @@
 
         <!-- Menú móvil desplegable -->
         <nav id="mobile-menu" class="absolute top-full left-0 right-0 lg:hidden border-b backdrop-blur-md px-3 pb-3 pt-1 space-y-1" aria-label="Navegación Principal (móvil)">
-            <button onclick="switchTab('galeria')" data-view="galeria" class="mob-nav-btn active">Galería</button>
-            <button onclick="switchTab('sobremi')" data-view="sobremi" class="mob-nav-btn">Sobre Mí</button>
-            <button onclick="switchTab('contacto')" data-view="contacto" class="mob-nav-btn">Contacto</button>
+            <a href="#galeria" aria-current="page" class="mob-nav-btn active">Galería</a>
+            <a href="#sobremi" class="mob-nav-btn">Sobre Mí</a>
         </nav>
     </header>
 
@@ -466,19 +497,19 @@
         <!-- ------------------------------------------
              VISTA 1: GALERÍA (Por defecto)
         ------------------------------------------- -->
-        <section id="view-galeria" class="spa-view active-view" aria-labelledby="gallery-heading">
+        <section id="galeria" class="spa-view active-view" aria-labelledby="gallery-heading">
             
             <!-- Encabezado de Galería y Filtros -->
-            <div class="flex flex-col lg:flex-row lg:items-end justify-between mb-5 sm:mb-10 pb-4 sm:pb-6 border-b border-white/[0.07] gap-4 sm:gap-6">
-                <div>
-                    <p class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Archivo Seleccionado & Fichas Técnicas</p>
-                    <h1 id="gallery-heading" class="font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight">
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between mb-4 md:mb-10 pb-3 md:pb-6 border-b border-white/[0.07] gap-3 md:gap-6">
+                <div id="gallery-intro">
+                    <p class="page-kicker text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Archivo Seleccionado &amp; Fichas Técnicas</p>
+                    <h1 id="gallery-heading" class="page-heading font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight">
                         Obras & Series Visuales
                     </h1>
                 </div>
 
                 <!-- Botones de Filtro Ordenados -->
-                <div id="gallery-filters" class="flex min-w-0 flex-wrap items-center gap-1.5 bg-studio-900 p-1.5 rounded-xl border border-white/[0.06]" role="tablist" aria-label="Filtros de categoría"></div>
+                <div id="gallery-filters" class="flex min-w-0 flex-wrap items-center gap-1.5 bg-studio-900 p-1.5 rounded-xl border border-white/[0.06]" role="group" aria-label="Filtros de categoría"></div>
             </div>
 
             <!-- Masonry de fotografías: encastran según la proporción real de cada imagen -->
@@ -490,14 +521,14 @@
 
 
         <!-- ------------------------------------------
-             VISTA 2: SOBRE MÍ (Independiente)
+             VISTA 2: SOBRE MÍ Y CONTACTO
         ------------------------------------------- -->
-        <section id="view-sobremi" class="spa-view" aria-labelledby="about-heading">
+        <section id="sobremi" class="spa-view" aria-labelledby="about-heading">
             
             <!-- Encabezado Editorial -->
-            <div class="mb-12 pb-6 border-b border-white/[0.07]">
-                <p id="about-eyebrow" class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Perfil &amp; Trayectoria</p>
-                <h2 id="about-heading" class="font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight">
+            <div class="mb-6 sm:mb-12 pb-4 sm:pb-6 border-b border-white/[0.07] text-center md:text-left">
+                <p id="about-eyebrow" class="page-kicker text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Perfil &amp; Trayectoria</p>
+                <h2 id="about-heading" class="page-heading font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight">
                     Detrás del Lente
                 </h2>
             </div>
@@ -618,25 +649,19 @@
                             <h4 id="about-cta-title" class="text-white font-medium text-base">¿Tienes un proyecto visual en mente?</h4>
                             <p id="about-cta-text" class="text-zinc-400 text-xs sm:text-sm mt-0.5">Disponible para comisiones comerciales y editoriales a nivel global.</p>
                         </div>
-                        <button id="about-cta-button" onclick="switchTab('contacto')" class="px-5 py-2.5 rounded-xl bg-white text-zinc-950 font-medium text-xs uppercase tracking-wider hover:bg-zinc-200 transition-colors shrink-0">
+                        <a id="about-cta-button" href="#contacto" class="px-5 py-2.5 rounded-xl bg-white text-zinc-950 font-medium text-xs uppercase tracking-wider hover:bg-zinc-200 transition-colors shrink-0">
                             Reservar Sesión
-                        </button>
+                        </a>
                     </div>
 
                 </div>
             </div>
-        </section>
-
-
-        <!-- ------------------------------------------
-             VISTA 3: CONTACTO (Independiente)
-        ------------------------------------------- -->
-        <section id="view-contacto" class="spa-view" aria-labelledby="contact-heading">
+        <section id="contacto" class="mt-10 sm:mt-20 pt-7 sm:pt-12 border-t border-white/[0.07]" aria-labelledby="contact-heading">
             
             <!-- Encabezado de Contacto -->
-            <div class="mb-12 pb-6 border-b border-white/[0.07]">
-                <p id="contact-eyebrow" class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Consultas &amp; Reservas</p>
-                <h2 id="contact-heading" class="font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight">
+            <div class="mb-6 sm:mb-12 pb-4 sm:pb-6 border-b border-white/[0.07] text-center md:text-left">
+                <p id="contact-eyebrow" class="page-kicker text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Consultas &amp; Reservas</p>
+                <h2 id="contact-heading" class="page-heading font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight" tabindex="-1">
                     Iniciar una Conversación
                 </h2>
             </div>
@@ -774,6 +799,7 @@
 
             </div>
         </section>
+        </section>
 
     </main>
 
@@ -783,10 +809,10 @@
     <footer class="border-t border-white/[0.07] py-6 px-4 sm:px-6 lg:px-8 mt-auto bg-studio-950">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500 font-mono">
             <p id="footer-copy">&copy; 2026 Portafolio. Todos los derechos reservados.</p>
-            <div class="flex items-center gap-6">
-                <button onclick="switchTab('galeria')" class="hover:text-zinc-300 transition-colors">Galería</button>
-                <button onclick="switchTab('sobremi')" class="hover:text-zinc-300 transition-colors">Sobre Mí</button>
-                <button onclick="switchTab('contacto')" class="hover:text-zinc-300 transition-colors">Contacto</button>
+            <div class="flex flex-wrap justify-center items-center gap-x-6 gap-y-2">
+                <a href="#galeria" class="hover:text-zinc-300 transition-colors">Galería</a>
+                <a href="#sobremi" class="hover:text-zinc-300 transition-colors">Sobre Mí</a>
+                <a href="#contacto" class="hover:text-zinc-300 transition-colors">Contacto</a>
             </div>
         </div>
     </footer>
@@ -898,6 +924,6 @@
     <!-- ==========================================
          LÓGICA DE LA APLICACIÓN (JAVASCRIPT VANILLA)
     =========================================== -->
-    <script src="assets/js/portfolio.js?v=11"></script>
+    <script src="assets/js/portfolio.js?v=12"></script>
 </body>
 </html>

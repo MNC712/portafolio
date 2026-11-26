@@ -49,12 +49,11 @@ function pfoFilterClass(active) {
 function renderFilters() {
   var box = document.getElementById('gallery-filters');
   if (!box) return;
-  var html = '<button onclick="filterGallery(\'todos\')" data-filter="todos" class="' + pfoFilterClass(PFO.filter === 'todos') + '">Todos</button>';
-  PFO.categories.forEach(function (c) {
-    var safeSlug = String(c.slug).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    html += '<button onclick="filterGallery(\'' + safeSlug + '\')" data-filter="' + pfoEsc(c.slug) + '" class="' + pfoFilterClass(PFO.filter === c.slug) + '">' + pfoEsc(c.label) + '</button>';
-  });
-  box.innerHTML = html;
+  box.innerHTML = [{ slug: 'todos', label: 'Todos' }].concat(PFO.categories).map(function (category) {
+    var active = PFO.filter === category.slug;
+    return '<button type="button" data-filter="' + pfoEsc(category.slug) + '" aria-pressed="' + active
+      + '" class="' + pfoFilterClass(active) + '">' + pfoEsc(category.label) + '</button>';
+  }).join('');
 }
 
 /* --- Grilla de obras (masonry) ---------------------------------------- */
@@ -201,8 +200,13 @@ function renderGallery(filter) {
 }
 
 function filterGallery(category) {
+  if (PFO.filter === category) return;
   PFO.filter = category;
-  renderFilters();
+  document.querySelectorAll('#gallery-filters [data-filter]').forEach(function (btn) {
+    var active = btn.dataset.filter === category;
+    btn.className = pfoFilterClass(active);
+    btn.setAttribute('aria-pressed', String(active));
+  });
 
   var grid = document.getElementById('gallery-grid');
   var countLabel = document.getElementById('gallery-count');
@@ -220,34 +224,32 @@ function filterGallery(category) {
   }, 220);
 }
 
-/* --- Navegación por pestañas (SPA) ------------------------------------ */
-function switchTab(tabName) {
-  var views = ['galeria', 'sobremi', 'contacto'];
-
-  views.forEach(function (view) {
-    var sectionEl = document.getElementById('view-' + view);
-    var btnEl = document.getElementById('tab-btn-' + view);
-    if (!sectionEl || !btnEl) return;
-
-    if (view === tabName) {
-      btnEl.classList.add('active', 'text-white');
-      btnEl.classList.remove('text-zinc-400');
-      sectionEl.style.display = 'block';
-      requestAnimationFrame(function () { sectionEl.classList.add('active-view'); });
-    } else {
-      btnEl.classList.remove('active', 'text-white');
-      btnEl.classList.add('text-zinc-400');
-      sectionEl.classList.remove('active-view');
-      sectionEl.style.display = 'none';
+/* --- Navegación por vistas y anclaje de contacto ----------------------- */
+function pfoRoute() {
+  var hash = location.hash;
+  var isContact = hash === '#contacto';
+  var page = isContact || hash === '#sobremi' ? 'sobremi' : 'galeria';
+  document.querySelectorAll('main > .spa-view').forEach(function (section) {
+    section.classList.toggle('active-view', section.id === page);
+  });
+  document.querySelectorAll('.nav-btn, .mob-nav-btn').forEach(function (link) {
+    var active = link.hash === '#' + page;
+    link.classList.toggle('active', active);
+    if (link.classList.contains('nav-btn')) {
+      link.classList.toggle('text-white', active);
+      link.classList.toggle('text-zinc-400', !active);
     }
+    if (active) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
   });
-
   pfoSetMenu(false);
-  Array.prototype.forEach.call(document.querySelectorAll('.mob-nav-btn'), function (btn) {
-    btn.classList.toggle('active', btn.getAttribute('data-view') === tabName);
-  });
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (isContact) {
+    document.getElementById('contact-heading').focus({ preventScroll: true });
+    document.getElementById('contacto').scrollIntoView({ block: 'start', behavior: 'instant' });
+  } else if (hash === '#galeria' || hash === '#sobremi' || hash === '') {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
 }
 
 /* --- Lightbox ---------------------------------------------------------- */
@@ -666,6 +668,23 @@ function pfoInit() {
 }
 
 function pfoReady() {
+  pfoRoute();
+  window.addEventListener('hashchange', pfoRoute);
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest('a[href^="#"]');
+    if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (link.hash === location.hash && /^#(galeria|sobremi|contacto)$/.test(link.hash)) {
+      event.preventDefault();
+      pfoRoute();
+    }
+  });
+
+  var filters = document.getElementById('gallery-filters');
+  if (filters) filters.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-filter]');
+    if (button) filterGallery(button.dataset.filter);
+  });
+
   var gallery = document.getElementById('gallery-grid');
   if (gallery) gallery.addEventListener('focusin', function (event) {
     var card = event.target.closest('.gallery-card');
