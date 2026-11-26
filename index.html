@@ -76,7 +76,22 @@
 
         /* Contenedor de la galería con transición suave al filtrar */
         #gallery-grid {
+            --gallery-gap: clamp(6px, 1.8vw, 12px);
+            column-count: 2;
+            column-gap: var(--gallery-gap);
             transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @media (min-width: 640px) {
+            #gallery-grid { --gallery-gap: 16px; }
+        }
+
+        @media (min-width: 1024px) {
+            #gallery-grid { --gallery-gap: 20px; column-count: 3; }
+        }
+
+        @media (pointer: coarse) and (max-height: 540px) {
+            #gallery-grid { column-count: 2; }
         }
 
         #gallery-grid.grid-switching {
@@ -97,7 +112,7 @@
                         box-shadow 0.4s ease;
             /* Masonry: la tarjeta no se fragmenta entre columnas */
             break-inside: avoid;
-            margin-bottom: 1rem;
+            margin-bottom: var(--gallery-gap);
         }
 
         .gallery-card.card-in {
@@ -105,13 +120,17 @@
             transform: translateY(0) scale(1);
         }
 
-        @media (min-width: 640px) {
-            .gallery-card { margin-bottom: 1.25rem; }
+        .gallery-category {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .gallery-card.card-in:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.85);
+        @media (max-width: 639px) {
+            #gallery-grid .gallery-card { border-radius: 10px; }
+            .gallery-card-top { top: 6px; left: 6px; right: 6px; }
+            .gallery-card .gallery-category { padding: 2px 5px; font-size: 9px; letter-spacing: .08em; }
         }
 
         /* Detalles del pie: ocultos por defecto (también en móvil).
@@ -124,6 +143,10 @@
         }
 
         @media (hover: hover) and (pointer: fine) {
+            .gallery-card.card-in:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.85);
+            }
             .gallery-card:hover .gallery-info,
             .gallery-card:focus-within .gallery-info {
                 opacity: 1;
@@ -159,8 +182,8 @@
             transform: scale(1);
         }
 
-        .group:hover .gallery-img.is-loaded {
-            transform: scale(1.045);
+        @media (hover: hover) and (pointer: fine) {
+            .group:hover .gallery-img.is-loaded { transform: scale(1.045); }
         }
 
         /* El enfoque empieza solo cuando coinciden carga y entrada en pantalla. */
@@ -295,7 +318,20 @@
         html:not(.dark) .mob-nav-btn { color: #52525b; }
         html:not(.dark) .mob-nav-btn:hover { color: #121215; }
         html:not(.dark) .mob-nav-btn.active { color: #121215; background: rgba(0, 0, 0, 0.05); }
-        @media (min-width: 768px) { #mobile-menu { display: none !important; } }
+        @media (min-width: 1024px) { #mobile-menu { display: none !important; } }
+
+        #contact-email-link, #contact-socials a, #about-stats { overflow-wrap: anywhere; }
+        #contact-form :is(input, select, textarea) { min-width: 0; max-width: 100%; }
+
+        #lb-stage { flex: 1 1 0; min-height: 0; }
+        #lb-image-frame { width: 100%; height: 100%; }
+        #lb-meta-panel { flex: 0 1 auto; max-height: 44%; overflow: auto; overflow-wrap: anywhere; }
+        #lb-category { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        @media (max-height: 540px) {
+            #lightbox { padding-block: 8px; }
+            #lb-stage { margin-block: 6px; }
+            #lb-meta-panel { max-height: 32%; }
+        }
 
         /* =========================================================
            MODO DÍA — capa de sobrescritura del tema claro.
@@ -371,21 +407,21 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
             
             <!-- Marca tipográfica (administrable desde el panel) -->
-            <button onclick="switchTab('galeria')" class="text-left group focus:outline-none">
+            <button onclick="switchTab('galeria')" class="min-w-0 text-left group focus-visible:outline focus-visible:outline-2">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center bg-studio-900 group-hover:border-white/50 transition-colors overflow-hidden shrink-0">
                         <img id="brand-logo" src="" alt="" class="hidden w-full h-full object-cover">
                         <i id="brand-icon" data-lucide="aperture" class="w-4 h-4 text-zinc-200"></i>
                     </div>
-                    <div>
-                        <span id="brand-title" class="block text-base sm:text-lg font-medium tracking-[0.15em] sm:tracking-[0.2em] text-white uppercase">Portafolio</span>
-                        <span id="brand-subtitle" class="block text-[10px] font-mono tracking-[0.25em] text-zinc-400 uppercase">Estudio Visual</span>
+                    <div class="min-w-0">
+                        <span id="brand-title" class="block truncate text-base sm:text-lg font-medium tracking-[0.15em] sm:tracking-[0.2em] text-white uppercase">Portafolio</span>
+                        <span id="brand-subtitle" class="block truncate text-[10px] font-mono tracking-[0.25em] text-zinc-400 uppercase">Estudio Visual</span>
                     </div>
                 </div>
             </button>
 
             <!-- Navegación por Pestañas (SPA) — escritorio -->
-            <nav class="hidden md:flex items-center gap-2 sm:gap-8" aria-label="Navegación Principal">
+            <nav class="hidden lg:flex shrink-0 items-center gap-2 xl:gap-8" aria-label="Navegación Principal">
                 <button onclick="switchTab('galeria')" id="tab-btn-galeria" class="nav-btn active px-3 py-2 text-xs sm:text-sm font-medium tracking-widest uppercase text-white transition-colors">
                     Galería
                 </button>
@@ -398,16 +434,16 @@
             </nav>
 
             <!-- Acciones rápidas: tema (día / noche), disponibilidad y menú móvil -->
-            <div class="flex items-center gap-1 sm:gap-4">
+            <div class="flex shrink-0 items-center gap-1 sm:gap-4">
                 <button id="theme-toggle" type="button" class="theme-toggle" aria-label="Cambiar entre modo día y noche" title="Modo día / noche">
                     <i data-lucide="sun" class="theme-icon-sun w-4 h-4"></i>
                     <i data-lucide="moon" class="theme-icon-moon w-4 h-4"></i>
                 </button>
-                <span class="hidden md:inline-flex items-center gap-2 text-xs font-mono text-zinc-400 bg-studio-900 px-3 py-1.5 rounded-full border border-white/5">
+                <span class="hidden lg:inline-flex items-center gap-2 text-xs font-mono text-zinc-400 bg-studio-900 px-3 py-1.5 rounded-full border border-white/5 whitespace-nowrap">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     Agenda Abierta
                 </span>
-                <button id="menu-toggle" type="button" class="md:hidden p-2 -mr-1 rounded-lg text-zinc-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="mobile-menu">
+                <button id="menu-toggle" type="button" class="lg:hidden min-w-11 min-h-11 p-2 -mr-1 rounded-lg text-zinc-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="mobile-menu">
                     <i data-lucide="menu" class="menu-icon-open w-6 h-6"></i>
                     <i data-lucide="x" class="menu-icon-close w-6 h-6"></i>
                 </button>
@@ -415,7 +451,7 @@
         </div>
 
         <!-- Menú móvil desplegable -->
-        <nav id="mobile-menu" class="absolute top-full left-0 right-0 md:hidden border-b backdrop-blur-md px-3 pb-3 pt-1 space-y-1" aria-label="Navegación Principal (móvil)">
+        <nav id="mobile-menu" class="absolute top-full left-0 right-0 lg:hidden border-b backdrop-blur-md px-3 pb-3 pt-1 space-y-1" aria-label="Navegación Principal (móvil)">
             <button onclick="switchTab('galeria')" data-view="galeria" class="mob-nav-btn active">Galería</button>
             <button onclick="switchTab('sobremi')" data-view="sobremi" class="mob-nav-btn">Sobre Mí</button>
             <button onclick="switchTab('contacto')" data-view="contacto" class="mob-nav-btn">Contacto</button>
@@ -425,7 +461,7 @@
     <!-- ==========================================
          CONTENEDOR PRINCIPAL DE VISTAS (SPA)
     =========================================== -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-7 sm:py-14">
 
         <!-- ------------------------------------------
              VISTA 1: GALERÍA (Por defecto)
@@ -433,7 +469,7 @@
         <section id="view-galeria" class="spa-view active-view" aria-labelledby="gallery-heading">
             
             <!-- Encabezado de Galería y Filtros -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 pb-6 border-b border-white/[0.07] gap-6">
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between mb-5 sm:mb-10 pb-4 sm:pb-6 border-b border-white/[0.07] gap-4 sm:gap-6">
                 <div>
                     <p class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 mb-2">Archivo Seleccionado & Fichas Técnicas</p>
                     <h1 id="gallery-heading" class="font-serif text-4xl sm:text-5xl font-normal text-white tracking-tight">
@@ -442,11 +478,11 @@
                 </div>
 
                 <!-- Botones de Filtro Ordenados -->
-                <div id="gallery-filters" class="flex flex-wrap items-center gap-1.5 bg-studio-900 p-1.5 rounded-xl border border-white/[0.06]" role="tablist" aria-label="Filtros de categoria"></div>
+                <div id="gallery-filters" class="flex min-w-0 flex-wrap items-center gap-1.5 bg-studio-900 p-1.5 rounded-xl border border-white/[0.06]" role="tablist" aria-label="Filtros de categoría"></div>
             </div>
 
             <!-- Masonry de fotografías: encastran según la proporción real de cada imagen -->
-            <div id="gallery-grid" class="columns-1 sm:columns-2 lg:columns-3 gap-3 sm:gap-4 relative">
+            <div id="gallery-grid" class="relative">
                 <!-- Las tarjetas se inyectan dinámicamente vía JS -->
             </div>
 
@@ -489,7 +525,7 @@
                     </div>
 
                     <!-- Tarjeta de Estadísticas Clave -->
-                    <div id="about-stats" class="grid grid-cols-3 gap-4 p-5 rounded-2xl bg-studio-900 border border-white/[0.07] text-center">
+                    <div id="about-stats" class="grid grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-5 rounded-2xl bg-studio-900 border border-white/[0.07] text-center">
                         <div>
                             <span class="block font-serif text-3xl sm:text-4xl text-white font-semibold">10+</span>
                             <span class="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mt-1 block">Años Exp.</span>
@@ -577,7 +613,7 @@
                     </div>
 
                     <!-- CTA hacia Contacto -->
-                    <div id="about-cta-card" class="pt-4 flex items-center justify-between p-6 rounded-2xl bg-gradient-to-r from-studio-900 to-studio-800 border border-white/10">
+                    <div id="about-cta-card" class="flex flex-col items-start sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-studio-900 to-studio-800 border border-white/10">
                         <div>
                             <h4 id="about-cta-title" class="text-white font-medium text-base">¿Tienes un proyecto visual en mente?</h4>
                             <p id="about-cta-text" class="text-zinc-400 text-xs sm:text-sm mt-0.5">Disponible para comisiones comerciales y editoriales a nivel global.</p>
@@ -610,12 +646,12 @@
                 <!-- Columna Izquierda: Tarjetas Informativas Directas (5 cols) -->
                 <div class="lg:col-span-5 space-y-5">
                     
-                    <div class="p-6 rounded-2xl bg-studio-900 border border-white/[0.07] space-y-6">
+                    <div class="p-4 sm:p-6 rounded-2xl bg-studio-900 border border-white/[0.07] space-y-6">
                         <div>
                             <span id="contact-email-label" class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block mb-1">Correo Directo de Estudio</span>
                             <div class="flex items-center justify-between gap-2">
                                 <a id="contact-email-link" href="mailto:contacto@estudio.com" class="text-lg font-medium text-white hover:underline">contacto@estudio.com</a>
-                                <button onclick="copyEmail()" id="copy-email-btn" class="p-2 rounded-lg bg-studio-800 hover:bg-studio-700 text-zinc-300 text-xs font-mono flex items-center gap-1.5 transition-colors" title="Copiar correo">
+                                <button onclick="copyEmail()" id="copy-email-btn" class="shrink-0 p-2 rounded-lg bg-studio-800 hover:bg-studio-700 text-zinc-300 text-xs font-mono flex items-center gap-1.5 transition-colors" title="Copiar correo">
                                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                                     <span id="copy-email-text">Copiar</span>
                                 </button>
@@ -648,7 +684,7 @@
                     </div>
 
                     <!-- Enlaces a Redes Sociales Profesionales -->
-                    <div class="p-6 rounded-2xl bg-studio-900 border border-white/[0.07]">
+                    <div class="p-4 sm:p-6 rounded-2xl bg-studio-900 border border-white/[0.07]">
                         <span id="contact-socials-label" class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block mb-4">Canales &amp; Portafolios Externos</span>
                         <div id="contact-socials" class="grid grid-cols-2 gap-3"></div>
                     </div>
@@ -657,7 +693,7 @@
 
                 <!-- Columna Derecha: Formulario Estructurado (7 cols) -->
                 <div class="lg:col-span-7">
-                    <div class="p-6 sm:p-8 rounded-2xl bg-studio-900 border border-white/[0.07] relative">
+                    <div class="p-4 sm:p-8 rounded-2xl bg-studio-900 border border-white/[0.07] relative">
                         
                         <h3 id="contact-form-title" class="text-lg font-medium text-white mb-1">Solicitud de Cotización o Reserva</h3>
                         <p id="contact-form-text" class="text-xs text-zinc-400 mb-6">Completa los detalles del proyecto. Respondo personalmente en menos de 24 horas.</p>
@@ -761,22 +797,22 @@
     <div id="lightbox" class="on-dark fixed inset-0 z-50 hidden bg-black/95 backdrop-blur-xl flex-col justify-between p-4 sm:p-6 transition-opacity duration-300 opacity-0" role="dialog" aria-modal="true" aria-label="Visor de fotografía a pantalla completa">
         
         <!-- Barra Superior del Lightbox -->
-        <div class="flex items-center justify-between w-full max-w-7xl mx-auto z-10">
-            <div class="flex items-center gap-3">
-                <span id="lb-counter" class="text-xs font-mono text-zinc-300 bg-studio-900 px-3 py-1.5 rounded-full border border-white/10">01 / 12</span>
+        <div class="flex shrink-0 items-center justify-between gap-2 w-full max-w-7xl mx-auto z-10">
+            <div class="flex min-w-0 items-center gap-2 sm:gap-3">
+                <span id="lb-counter" class="shrink-0 whitespace-nowrap text-xs font-mono text-zinc-300 bg-studio-900 px-3 py-1.5 rounded-full border border-white/10">01 / 12</span>
                 <span id="lb-category" class="text-xs font-mono uppercase tracking-widest text-zinc-300 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">CATEGORÍA</span>
                 <span id="lb-light-badge" class="hidden md:inline-flex items-center gap-1.5 text-xs font-mono text-zinc-400 px-3 py-1.5 rounded-full bg-studio-900/80 border border-white/5">
                     <i data-lucide="sun-medium" class="w-3.5 h-3.5 text-amber-300/80"></i>
                     <span id="lb-lighting">Luz Natural</span>
                 </span>
             </div>
-            <button onclick="closeLightbox()" class="p-2.5 rounded-full bg-white/5 hover:bg-white/15 text-white border border-white/10 transition-colors" aria-label="Cerrar visor (Tecla Escape)">
+            <button onclick="closeLightbox()" class="shrink-0 p-2.5 rounded-full bg-white/5 hover:bg-white/15 text-white border border-white/10 transition-colors" aria-label="Cerrar visor (Tecla Escape)">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
         <!-- Contenedor Central de la Imagen + Controles Laterales -->
-        <div class="relative flex-grow flex items-center justify-center w-full max-w-7xl mx-auto my-3 overflow-hidden" onclick="handleLightboxBackdropClick(event)">
+        <div id="lb-stage" class="relative flex items-center justify-center w-full max-w-7xl mx-auto my-3 overflow-hidden" onclick="handleLightboxBackdropClick(event)">
             
             <!-- Botón Anterior -->
             <button onclick="changeLightboxImage(-1); event.stopPropagation();" class="absolute left-2 sm:left-4 z-20 p-3.5 rounded-full bg-studio-900/85 hover:bg-white text-white hover:text-zinc-950 border border-white/10 transition-all shadow-lg" aria-label="Fotografía anterior">
@@ -784,8 +820,8 @@
             </button>
 
             <!-- Imagen Principal con transición suave -->
-            <div class="relative flex items-center justify-center max-h-[64vh] max-w-full">
-                <img id="lb-image" src="" alt="" class="lb-smooth-target max-h-[64vh] max-w-full object-contain rounded-lg shadow-2xl select-none border border-white/[0.06]">
+            <div id="lb-image-frame" class="relative flex items-center justify-center">
+                <img id="lb-image" src="" alt="" class="lb-smooth-target max-h-full max-w-full object-contain rounded-lg shadow-2xl select-none border border-white/[0.06]">
             </div>
 
             <!-- Botón Siguiente -->
@@ -795,7 +831,7 @@
         </div>
 
         <!-- Barra Inferior Refinada: Ficha Artística + Especificaciones EXIF Estructuradas -->
-        <div id="lb-meta-panel" class="lb-smooth-target w-full max-w-6xl mx-auto bg-studio-900/95 border border-white/10 rounded-2xl p-4 sm:p-5 z-10 shadow-2xl">
+        <div id="lb-meta-panel" tabindex="0" role="region" aria-label="Ficha de la fotografía" class="lb-smooth-target w-full max-w-6xl mx-auto bg-studio-900/95 border border-white/10 rounded-2xl p-3 sm:p-5 z-10 shadow-2xl">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center">
                 
                 <!-- Información Artística (Izquierda - 5 columnas) -->
@@ -862,6 +898,6 @@
     <!-- ==========================================
          LÓGICA DE LA APLICACIÓN (JAVASCRIPT VANILLA)
     =========================================== -->
-    <script src="assets/js/portfolio.js?v=10"></script>
+    <script src="assets/js/portfolio.js?v=11"></script>
 </body>
 </html>

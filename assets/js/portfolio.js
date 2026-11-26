@@ -105,9 +105,9 @@ function pfoCard(photo, index) {
     '    <img src="' + pfoEsc(thumb) + '" alt="' + pfoEsc(title) + '" loading="lazy"' + autoAttr + fallbackAttr,
     '      onload="pfoImageLoaded(this)" onerror="pfoImageError(this)"',
     '      class="gallery-img blur-up w-full h-full object-cover">',
-    '    <div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-20">',
-    '      <span class="text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-md bg-black/65 backdrop-blur-md text-zinc-200 border border-white/10">' + pfoEsc(label) + '</span>',
-    '      <span class="w-8 h-8 rounded-full bg-black/65 backdrop-blur-md border border-white/15 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100"><i data-lucide="maximize-2" class="w-3.5 h-3.5"></i></span>',
+    '    <div class="gallery-card-top absolute top-3 left-3 right-3 flex items-center justify-between gap-1 pointer-events-none z-20">',
+    '      <span class="gallery-category text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-md bg-black/65 backdrop-blur-md text-zinc-200 border border-white/10">' + pfoEsc(label) + '</span>',
+    '      <span class="hidden lg:flex shrink-0 w-8 h-8 rounded-full bg-black/65 backdrop-blur-md border border-white/15 items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100"><i data-lucide="maximize-2" class="w-3.5 h-3.5"></i></span>',
     '    </div>',
     '    <div class="gallery-info absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5 bg-gradient-to-t from-black/90 via-black/70 to-transparent">',
     '      <div class="flex items-start justify-between gap-3">',
@@ -476,9 +476,9 @@ function pfoSetContent(c) {
       var href = hasUrl ? s.url : '#contacto';
       var extra = hasUrl ? ' target="_blank" rel="noopener"' : ' onclick="event.preventDefault()"';
       var tail = (s.icon === 'book-open') ? 'download' : 'arrow-up-right';
-      return '<a href="' + pfoEsc(href) + '"' + extra + ' class="flex items-center justify-between p-3 rounded-xl bg-studio-950 border border-white/[0.05] hover:border-white/20 text-zinc-300 hover:text-white transition-all text-xs font-medium">' +
-        '<span class="flex items-center gap-2"><i data-lucide="' + pfoEsc(s.icon) + '" class="w-4 h-4"></i> ' + pfoEsc(s.label) + '</span>' +
-        '<i data-lucide="' + tail + '" class="w-3.5 h-3.5 text-zinc-500"></i></a>';
+      return '<a href="' + pfoEsc(href) + '"' + extra + ' class="flex items-center justify-between gap-1.5 p-2 sm:p-3 rounded-xl bg-studio-950 border border-white/[0.05] hover:border-white/20 text-zinc-300 hover:text-white transition-all text-xs font-medium">' +
+        '<span class="flex min-w-0 items-center gap-1.5"><i data-lucide="' + pfoEsc(s.icon) + '" class="w-4 h-4 shrink-0"></i><span>' + pfoEsc(s.label) + '</span></span>' +
+        '<i data-lucide="' + tail + '" class="w-3.5 h-3.5 shrink-0 text-zinc-500"></i></a>';
     }).join('');
   }
 
